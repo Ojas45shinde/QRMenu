@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Edit{% else %}New{% endif %} Category{% endblock %}
+
+{% block content %}
+<div class="page--narrow">
+
+    <div class="breadcrumb">
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <span class="breadcrumb__sep">›</span>
+        <a href="{% url 'category_list' %}">Categories</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">
+            {% if form.instance.pk %}Edit{% else %}New{% endif %} Category
+        </span>
+    </div>
+
+    <div class="card">
+        <div class="card__header">
+            <h1 style="font-size:1.3rem;">
+                {% if form.instance.pk %}Edit Category{% else %}New Category{% endif %}
+            </h1>
+        </div>
+        <div class="card__body">
+            <form method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <div class="form-help">{{ field.help_text }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                    {% for error in field.errors %}
+                    <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+                    <button type="submit" class="btn btn--primary">
+                        {% if form.instance.pk %}Save Changes{% else %}Create Category{% endif %}
+                    </button>
+                    <a href="{% url 'category_list' %}" class="btn btn--ghost">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

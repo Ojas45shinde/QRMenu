@@ -1,0 +1,8 @@
+Django==5.0.6
+psycopg2-binary
+Pillow
+qrcode[pil]
+django-environ
+whitenoise
+gunicorn
+django-htmx

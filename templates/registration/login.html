@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — QR Menu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+
+            <div class="auth-card__header">
+                <div class="auth-card__logo">🍽 QR Menu</div>
+                <div class="auth-card__tagline">Restaurant Owner Portal</div>
+            </div>
+
+            <div class="auth-card__body">
+                <h2 style="font-size:1.3rem;margin-bottom:1.5rem;">Welcome back</h2>
+
+                {% if form.errors %}
+                <div class="alert alert--error">
+                    ✕ Invalid username or password. Please try again.
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_username">Username</label>
+                        <input type="text" name="username" id="id_username" class="form-control"
+                            placeholder="Your username" autofocus autocomplete="username">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_password">
+                            Password
+                            <button type="button" data-toggle-password="id_password" style="background:none;border:none;cursor:pointer;
+                           font-size:0.85rem;margin-left:0.5rem;">👁</button>
+                        </label>
+                        <input type="password" name="password" id="id_password" class="form-control"
+                            placeholder="Your password" autocomplete="current-password">
+                    </div>
+
+                    <input type="hidden" name="next" value="{{ next }}">
+
+                    <button type="submit" class="btn btn--primary btn--full" style="margin-top:0.5rem;">
+                        Login →
+                    </button>
+                </form>
+
+                <p class="text-center text-muted text-sm mt-3">
+                    Need an account? Contact your administrator.
+                </p>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+
+</html>

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Delete QR Code{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:4rem auto;text-align:center;padding:0 1rem;">
+  <div style="font-size:3.5rem;margin-bottom:1rem;">📱</div>
+  <h1 style="font-size:1.6rem;margin-bottom:0.75rem;">Delete "{{ obj }}"?</h1>
+  <p style="color:var(--muted);margin-bottom:0.5rem;line-height:1.6;">
+    This QR code will stop working immediately.
+  </p>
+  <p style="color:#DC2626;font-size:0.875rem;margin-bottom:2rem;">
+    Any printed copies of this QR code will no longer work.
+  </p>
+  <div style="display:flex;gap:1rem;justify-content:center;">
+    <form method="POST">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--danger btn--lg">Yes, Delete</button>
+    </form>
+    <a href="{% url 'qr_list' %}" class="btn btn--ghost btn--lg">Cancel</a>
+  </div>
+</div>
+{% endblock %}

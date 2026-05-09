@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Download QR Code — {{ qr.label }}{% endblock %}
+
+{% block content %}
+<div class="page">
+
+    <div class="breadcrumb">
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <span class="breadcrumb__sep">›</span>
+        <a href="{% url 'qr_list' %}">QR Codes</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Download — {{ qr.label }}</span>
+    </div>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-header__title">Choose a Display Template</h1>
+            <p class="page-header__sub">
+                QR code for <strong>{{ qr.label }}</strong> —
+                Scanned <strong>{{ qr.scan_count }}</strong> time{{ qr.scan_count|pluralize }}
+            </p>
+        </div>
+        <a href="{% url 'qr_list' %}" class="btn btn--ghost btn--sm">← Back</a>
+    </div>
+
+    <div class="alert alert--info mb-3">
+        ℹ Pick a template below, download the PNG, and print it for your table.
+        The QR code is already embedded in the downloaded image — ready to scan!
+    </div>
+
+    <!-- Template cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;margin-top:1rem;">
+
+        {% for tpl in templates %}
+        <div class="card" style="overflow:hidden;transition:all 0.3s;"
+            onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 16px 48px rgba(0,0,0,0.12)'"
+            onmouseout="this.style.transform='';this.style.boxShadow=''">
+
+            <!-- Template preview -->
+            {% if tpl.key == 'dark' %}
+            <div
+                style="background:linear-gradient(160deg,#0D0D0D,#1A0A0A);padding:2rem;text-align:center;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;border-bottom:3px solid #E63946;">
+                <div>
+                    <div style="font-size:0.6rem;letter-spacing:0.2em;color:#555;text-transform:uppercase;">Welcome to
+                    </div>
+                    <div
+                        style="font-family:Georgia,serif;font-size:1.1rem;font-weight:700;color:#fff;margin-top:0.25rem;">
+                        {{ qr.restaurant.name }}</div>
+                </div>
+                <div
+                    style="width:80px;height:80px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;border:2px solid #E63946;box-shadow:0 0 20px rgba(230,57,70,0.3);">
+                    <span style="font-size:0.5rem;color:#999;text-align:center;">QR<br>Code</span>
+                </div>
+                <div style="font-size:0.55rem;color:#444;letter-spacing:0.1em;">NO APP NEEDED · JUST SCAN</div>
+            </div>
+
+            {% elif tpl.key == 'light' %}
+            <div
+                style="background:linear-gradient(145deg,#FFFDF7,#FFF0E8);padding:2rem;text-align:center;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;border-bottom:3px solid #E8D5C0;">
+                <div>
+                    <div style="font-size:1.5rem;">🍽</div>
+                    <div style="font-family:Georgia,serif;font-size:1.1rem;font-weight:700;color:#2D1B00;">{{
+                        qr.restaurant.name }}</div>
+                    <div style="font-size:0.7rem;color:#A08060;">Good food. Good vibes.</div>
+                </div>
+                <div
+                    style="background:#2D1B00;color:#fff;padding:0.3rem 1rem;border-radius:100px;font-size:0.7rem;font-weight:700;">
+                    📷 Scan to view menu</div>
+                <div
+                    style="width:80px;height:80px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;border:2px solid #E8D5C0;">
+                    <span style="font-size:0.5rem;color:#999;text-align:center;">QR<br>Code</span>
+                </div>
+            </div>
+
+            {% elif tpl.key == 'bold' %}
+            <div
+                style="background:#ec3847;padding:2rem;text-align:center;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;">
+                <div>
+                    <div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:900;color:#fff;line-height:1;">
+                        VIEW<br>OUR<br>MENU</div>
+                    <div style="font-size:0.7rem;color:rgba(255,255,255,0.65);margin-top:0.25rem;">{{ qr.restaurant.name
+                        }}</div>
+                </div>
+                <div
+                    style="width:90px;height:90px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+                    <span style="font-size:0.5rem;color:#999;text-align:center;">QR<br>Code</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Card info + download button -->
+            <div class="card__body">
+                <div style="font-weight:700;font-size:1rem;margin-bottom:0.25rem;">{{ tpl.name }}</div>
+                <div style="font-size:0.825rem;color:var(--muted);margin-bottom:1.25rem;">{{ tpl.desc }}</div>
+                <a href="{% url 'qr_download_template' qr.pk tpl.key %}" class="btn btn--primary btn--full">
+                    ⬇ Download "{{ tpl.name }}" PNG
+                </a>
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <div class="card mt-3" style="background:#FFFBEA;border-color:#FCD34D;">
+        <div class="card__body">
+            <p style="font-size:0.875rem;color:#92400E;">
+                💡 <strong>Printing tip:</strong> Print at A5 or A6 size (half a sheet of paper) for table stands.
+                Use a laminator to make them spill-proof. The QR code works even if slightly bent or folded.
+            </p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

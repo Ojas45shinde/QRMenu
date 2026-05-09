@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Menu Categories{% endblock %}
+
+{% block content %}
+<div class="page">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-header__title">Menu Categories</h1>
+            <p class="page-header__sub">Organise your menu into sections</p>
+        </div>
+        <a href="{% url 'category_create' %}" class="btn btn--primary">+ Add Category</a>
+    </div>
+
+    {% if categories %}
+    {% for cat in categories %}
+    <div class="card mb-2">
+        <div class="card__body"
+            style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <div>
+                <div style="font-weight:600;font-size:1rem;">{{ cat.name }}</div>
+                <div class="text-muted text-sm">{{ cat.items.count }} item{{ cat.items.count|pluralize }}</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <a href="{% url 'item_list' cat.pk %}" class="btn btn--secondary btn--sm">
+                    📋 View Items
+                </a>
+                <a href="{% url 'item_create' cat.pk %}" class="btn btn--ghost btn--sm">
+                    + Add Item
+                </a>
+                <a href="{% url 'category_delete' cat.pk %}" class="btn btn--danger btn--sm">
+                    🗑 Delete
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state__icon">🍽</div>
+        <div class="empty-state__title">No categories yet</div>
+        <p class="empty-state__text">Create your first category like "Starters", "Mains", or "Drinks".</p>
+        <a href="{% url 'category_create' %}" class="btn btn--primary">+ Add First Category</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

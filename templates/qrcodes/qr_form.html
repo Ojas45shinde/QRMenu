@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}New QR Code{% endblock %}
+{% block content %}
+<div class="page--narrow">
+
+  <div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Dashboard</a>
+    <span class="breadcrumb__sep">›</span>
+    <a href="{% url 'qr_list' %}">QR Codes</a>
+    <span class="breadcrumb__sep">›</span>
+    <span class="breadcrumb__current">New QR Code</span>
+  </div>
+
+  <div class="card">
+    <div class="card__header">
+      <h1 style="font-size:1.3rem;">📱 Create New QR Code</h1>
+    </div>
+    <div class="card__body">
+
+      <div class="alert alert--info mb-3">
+        ℹ Give this QR code a label like <strong>Table 1</strong>,
+        <strong>Table 2</strong>, <strong>Bar Counter</strong>,
+        or <strong>Takeaway</strong>. Each label gets its own unique QR code PNG.
+      </div>
+
+      <form method="POST" action="{% url 'qr_create' %}">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label" for="id_label">
+            QR Code Label <span style="color:var(--brand)">*</span>
+          </label>
+          <input type="text"
+                 id="id_label"
+                 name="label"
+                 class="form-control"
+                 placeholder="e.g. Table 1, Table 2, Bar Counter, Takeaway"
+                 value="{{ label_value }}"
+                 required
+                 autofocus>
+          <div class="form-help">
+            Each label creates a unique QR code. You can create as many as you need.
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+          <button type="submit" class="btn btn--primary">
+            Create QR Code
+          </button>
+          <a href="{% url 'qr_list' %}" class="btn btn--ghost">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

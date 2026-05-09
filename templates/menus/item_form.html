@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Edit{% else %}New{% endif %} Item — {{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="page--narrow">
+
+    <div class="breadcrumb">
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <span class="breadcrumb__sep">›</span>
+        <a href="{% url 'category_list' %}">Categories</a>
+        <span class="breadcrumb__sep">›</span>
+        <a href="{% url 'item_list' category.pk %}">{{ category.name }}</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">
+            {% if form.instance.pk %}Edit Item{% else %}New Item{% endif %}
+        </span>
+    </div>
+
+    <div class="card">
+        <div class="card__header">
+            <h1 style="font-size:1.3rem;">
+                {% if form.instance.pk %}Edit Item{% else %}New Item in "{{ category.name }}"{% endif %}
+            </h1>
+        </div>
+        <div class="card__body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+
+                    {% if field.field.widget.input_type == 'file' %}
+                    {% if form.instance.image %}
+                    <div style="margin-bottom:0.75rem;">
+                        <img src="{{ form.instance.image.url }}" id="img-preview" style="width:120px;height:120px;object-fit:cover;
+                              border-radius:8px;border:1px solid var(--border);">
+                    </div>
+                    {% else %}
+                    <img id="img-preview" style="display:none;width:120px;height:120px;
+                            object-fit:cover;border-radius:8px;
+                            border:1px solid var(--border);margin-bottom:0.75rem;">
+                    {% endif %}
+                    <input type="file" name="{{ field.html_name }}" id="{{ field.id_for_label }}" accept="image/*"
+                        data-preview="img-preview" class="form-control" style="padding:0.4rem;">
+                    {% elif field.field.widget.input_type == 'checkbox' %}
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem;">
+                        {{ field }}
+                        <span class="text-sm text-muted">{{ field.help_text }}</span>
+                    </div>
+                    {% else %}
+                    {{ field }}
+                    {% endif %}
+
+                    {% if field.help_text and field.field.widget.input_type != 'checkbox' %}
+                    <div class="form-help">{{ field.help_text }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                    {% for error in field.errors %}
+                    <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+                    <button type="submit" class="btn btn--primary">
+                        {% if form.instance.pk %}Save Changes{% else %}Add Item{% endif %}
+                    </button>
+                    <a href="{% url 'item_list' category.pk %}" class="btn btn--ghost">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

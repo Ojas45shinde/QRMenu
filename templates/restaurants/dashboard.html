@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page">
+
+  {% if not restaurant %}
+  <div class="empty-state">
+    <div class="empty-state__icon">🏪</div>
+    <div class="empty-state__title">No restaurant set up yet</div>
+    <p class="empty-state__text">Create your restaurant profile to get started.</p>
+    <a href="{% url 'restaurant_edit' %}" class="btn btn--primary">+ Set Up My Restaurant</a>
+  </div>
+
+  {% else %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">{{ restaurant.name }}</h1>
+      <p class="page-header__sub">
+        Public menu:
+        <a href="/m/{{ restaurant.slug }}/" target="_blank" style="color:var(--brand);">
+          127.0.0.1:8000/m/{{ restaurant.slug }}/
+        </a>
+      </p>
+    </div>
+    <a href="{% url 'restaurant_edit' %}" class="btn btn--ghost btn--sm">Settings</a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-card__icon">🍽</div>
+      <div class="stat-card__value">{{ restaurant.categories.count }}</div>
+      <div class="stat-card__label">Categories</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon">📱</div>
+      <div class="stat-card__value">{{ restaurant.qrcodes.count }}</div>
+      <div class="stat-card__label">QR Codes</div>
+    </div>
+  </div>
+
+  <div class="action-grid">
+    <a href="{% url 'category_list' %}" class="action-card">
+      <div class="action-card__icon">🍽</div>
+      <div class="action-card__title">Manage Menu</div>
+      <div class="action-card__desc">Add categories and items</div>
+    </a>
+    <a href="{% url 'qr_list' %}" class="action-card">
+      <div class="action-card__icon">📱</div>
+      <div class="action-card__title">QR Codes</div>
+      <div class="action-card__desc">Generate and download</div>
+    </a>
+    <a href="{% url 'restaurant_edit' %}" class="action-card">
+      <div class="action-card__icon">⚙️</div>
+      <div class="action-card__title">Settings</div>
+      <div class="action-card__desc">Logo, theme and info</div>
+    </a>
+    <a href="/m/{{ restaurant.slug }}/" target="_blank" class="action-card">
+      <div class="action-card__icon">👁</div>
+      <div class="action-card__title">Preview Menu</div>
+      <div class="action-card__desc">See customer view</div>
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
