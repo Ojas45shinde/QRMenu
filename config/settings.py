@@ -4,9 +4,13 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
-environ.Env.read_env(BASE_DIR / ".env")
 
-SECRET_KEY    = env("SECRET_KEY", default="change-me-in-production-abc123xyz")
+# Read .env file if it exists (local development)
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    environ.Env.read_env(env_file)
+
+SECRET_KEY    = env("SECRET_KEY", default="local-dev-key-change-in-production")
 DEBUG         = env("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
@@ -53,11 +57,20 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# Database — uses DATABASE_URL from Render, falls back to local PostgreSQL
+# ── Database ──────────────────────────────────────────────────────────────────
+# Render injects DATABASE_URL automatically
 DATABASE_URL = env("DATABASE_URL", default=None)
+
 if DATABASE_URL:
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 else:
+    # Local PostgreSQL fallback
     DATABASES = {"default": {
         "ENGINE":   "django.db.backends.postgresql",
         "NAME":     env("DB_NAME",     default="qrmenu_db"),
@@ -74,22 +87,22 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Static files
+# ── Static files ──────────────────────────────────────────────────────────────
 STATIC_URL   = "/static/"
 STATIC_ROOT  = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# Media files
+# ── Media files ───────────────────────────────────────────────────────────────
 MEDIA_URL  = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Auth
+# ── Auth ──────────────────────────────────────────────────────────────────────
 LOGIN_URL           = "/auth/login/"
 LOGIN_REDIRECT_URL  = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
-# Security (only active in production when DEBUG=False)
+# ── Security (production only) ────────────────────────────────────────────────
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER   = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
