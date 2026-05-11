@@ -1,0 +1,11 @@
+{% if orders %}
+  {% for order in orders %}
+    {% include "orders/partials/order_card.html" %}
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon">🎉</div>
+    <div class="empty-state__title">No active orders</div>
+    <p class="empty-state__text">New orders will appear here automatically every 8 seconds.</p>
+  </div>
+{% endif %}

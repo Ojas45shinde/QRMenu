@@ -1,0 +1,65 @@
+{% load humanize %}
+<div class="order-card"
+     id="order-{{ order.pk }}"
+     data-items="{{ order.items.count }}"
+     data-total="{{ order.total_amount }}">
+
+  <div class="order-card__header">
+    <div>
+      <div class="order-num">Order #{{ order.pk|stringformat:"04d" }}</div>
+      <div class="order-table">📍 Table {{ order.table_number }}</div>
+    </div>
+    <div style="text-align:right;">
+      <span class="badge badge--{{ order.status_color }} badge-{{ order.status }}">
+        {{ order.get_status_display }}
+      </span>
+      <div class="order-time">{{ order.created_at|time:"H:i" }}</div>
+    </div>
+  </div>
+
+  {% if order.note %}
+    <div class="order-note">📝 {{ order.note }}</div>
+  {% endif %}
+
+  <div class="order-items">
+    {% for item in order.items.all %}
+      <div class="order-item-row">
+        <span>{{ item.quantity }}× {{ item.name }}</span>
+        <span>₹{{ item.subtotal }}</span>
+      </div>
+    {% endfor %}
+    <div class="order-total">
+      <span>Total</span>
+      <span>₹{{ order.total_amount }}</span>
+    </div>
+  </div>
+
+  <div class="status-actions">
+    {% if order.status == "pending" %}
+      <form method="POST" action="{% url 'update_order_status' order.pk %}">
+        {% csrf_token %}<input type="hidden" name="status" value="confirmed">
+        <button type="submit" class="btn btn--primary btn--sm" hx-post="{% url 'update_order_status' order.pk %}" hx-vals='{"status":"confirmed"}' hx-target="#order-{{ order.pk }}" hx-swap="outerHTML">✓ Confirm</button>
+      </form>
+      <form method="POST" action="{% url 'update_order_status' order.pk %}">
+        {% csrf_token %}<input type="hidden" name="status" value="cancelled">
+        <button type="submit" class="btn btn--danger btn--sm">✕ Cancel</button>
+      </form>
+    {% elif order.status == "confirmed" %}
+      <form method="POST" action="{% url 'update_order_status' order.pk %}">
+        {% csrf_token %}<input type="hidden" name="status" value="preparing">
+        <button type="submit" class="btn btn--primary btn--sm">🍳 Preparing</button>
+      </form>
+    {% elif order.status == "preparing" %}
+      <form method="POST" action="{% url 'update_order_status' order.pk %}">
+        {% csrf_token %}<input type="hidden" name="status" value="ready">
+        <button type="submit" class="btn btn--success btn--sm">🔔 Ready</button>
+      </form>
+    {% elif order.status == "ready" %}
+      <form method="POST" action="{% url 'update_order_status' order.pk %}">
+        {% csrf_token %}<input type="hidden" name="status" value="completed">
+        <button type="submit" class="btn btn--ghost btn--sm">✓ Completed</button>
+      </form>
+    {% endif %}
+  </div>
+
+</div>

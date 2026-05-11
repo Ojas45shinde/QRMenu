@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Orders — Live Dashboard{% endblock %}
+
+{% block extra_head %}
+<style>
+  .order-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:1.25rem; margin-bottom:1rem; transition:all 0.3s; }
+  .order-card:hover { box-shadow:0 8px 24px rgba(0,0,0,0.08); }
+  .order-card__header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem; }
+  .order-num { font-family:var(--font-display); font-size:1.2rem; font-weight:700; color:var(--dark); }
+  .order-table { font-size:0.85rem; color:var(--muted); }
+  .order-time { font-size:0.78rem; color:var(--muted); }
+  .order-items { border-top:1px solid var(--border); padding-top:0.75rem; margin-top:0.5rem; }
+  .order-item-row { display:flex; justify-content:space-between; font-size:0.875rem; padding:0.2rem 0; }
+  .order-total { display:flex; justify-content:space-between; font-weight:700; font-size:1rem; border-top:1px solid var(--border); margin-top:0.5rem; padding-top:0.5rem; }
+  .order-note { background:#FFFBEA; border:1px solid #FCD34D; border-radius:8px; padding:0.5rem 0.75rem; font-size:0.8rem; color:#92400E; margin-top:0.5rem; }
+  .status-actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; }
+  .badge-pending  { background:#FEF9C3; color:#854D0E; }
+  .badge-confirmed{ background:#DBEAFE; color:#1E40AF; }
+  .badge-preparing{ background:#FEF3C7; color:#92400E; }
+  .badge-ready    { background:#DCFCE7; color:#166534; }
+  .badge-completed{ background:#F1F5F9; color:#475569; }
+  .badge-cancelled{ background:#FEE2E2; color:#991B1B; }
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .new-order-alert { background:linear-gradient(135deg,#E63946,#C1121F); color:#fff; border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.5rem; display:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">Live Orders</h1>
+      <p class="page-header__sub">
+        Auto-refreshes every 8 seconds
+        <span class="pulse" style="color:var(--brand);">●</span>
+      </p>
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <a href="?status=active"    class="btn {% if status_filter == 'active' %}btn--primary{% else %}btn--ghost{% endif %} btn--sm">🔴 Active</a>
+      <a href="?status=completed" class="btn {% if status_filter == 'completed' %}btn--primary{% else %}btn--ghost{% endif %} btn--sm">✓ Completed</a>
+      <a href="?status=all"       class="btn {% if status_filter == 'all' %}btn--primary{% else %}btn--ghost{% endif %} btn--sm">All</a>
+      <a href="{% url 'dashboard' %}" class="btn btn--ghost btn--sm">← Dashboard</a>
+    </div>
+  </div>
+
+  <!-- New order alert (shown by JS when new order arrives) -->
+  <div class="new-order-alert" id="new-order-alert">
+    🔔 <strong>New order received!</strong> Check the list below.
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" style="margin-bottom:1.5rem;">
+    <div class="stat-card">
+      <div class="stat-card__icon">🟡</div>
+      <div class="stat-card__value">{{ orders|length }}</div>
+      <div class="stat-card__label">{% if status_filter == 'active' %}Active Orders{% else %}Orders Shown{% endif %}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon">🍽</div>
+      <div class="stat-card__value" id="total-items">—</div>
+      <div class="stat-card__label">Total Items</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon">💰</div>
+      <div class="stat-card__value" id="total-revenue">—</div>
+      <div class="stat-card__label">Total Value</div>
+    </div>
+  </div>
+
+  <!-- Orders list — HTMX polling target -->
+  <div id="orders-container"
+       hx-get="{% url 'orders_poll' %}"
+       hx-trigger="every 8s"
+       hx-swap="innerHTML"
+       hx-indicator="#poll-indicator">
+
+    {% include "orders/partials/orders_list.html" %}
+
+  </div>
+
+  <div id="poll-indicator" class="htmx-indicator" style="position:fixed;bottom:1rem;right:1rem;"></div>
+
+</div>
+
+<script>
+  let prevCount = {{ orders|length }};
+
+  // Calculate stats on load
+  function updateStats() {
+    const cards = document.querySelectorAll('.order-card');
+    let totalItems = 0, totalRevenue = 0;
+    cards.forEach(card => {
+      totalItems   += parseInt(card.dataset.items   || 0);
+      totalRevenue += parseFloat(card.dataset.total || 0);
+    });
+    const el1 = document.getElementById('total-items');
+    const el2 = document.getElementById('total-revenue');
+    if(el1) el1.textContent = totalItems;
+    if(el2) el2.textContent = '₹' + totalRevenue.toFixed(2);
+  }
+
+  // Alert on new order
+  document.addEventListener('htmx:afterSwap', function(e) {
+    if(e.target.id === 'orders-container') {
+      const newCount = document.querySelectorAll('.order-card').length;
+      if(newCount > prevCount) {
+        const alert = document.getElementById('new-order-alert');
+        if(alert) {
+          alert.style.display = 'block';
+          // Play beep sound
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            osc.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.start(); osc.stop(ctx.currentTime + 0.3);
+          } catch(e) {}
+          setTimeout(() => { alert.style.display = 'none'; }, 5000);
+        }
+      }
+      prevCount = newCount;
+      updateStats();
+    }
+  });
+  updateStats();
+</script>
+{% endblock %}

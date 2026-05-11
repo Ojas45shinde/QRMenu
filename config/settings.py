@@ -21,11 +21,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",
     "django_htmx",
     "apps.core",
     "apps.restaurants",
     "apps.menus",
     "apps.qrcodes",
+    "apps.orders",
 ]
 
 MIDDLEWARE = [
