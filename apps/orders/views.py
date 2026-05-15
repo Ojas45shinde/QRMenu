@@ -1,148 +1,90 @@
 import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.contrib import messages
 from django.utils import timezone
-from .models import Order, OrderItem
+from django.views.decorators.csrf import csrf_exempt
 from apps.restaurants.models import Restaurant
-from apps.menus.models import MenuCategory
+from apps.menus.models import MenuCategory, MenuItem
+from apps.qrcodes.models import QRCode
+from .models import Order, OrderItem
 
 
-def _restaurant(user):
-    try:
-        return user.restaurant
-    except Exception:
-        return None
+def place_order(request, restaurant_slug, qr_slug):
+    restaurant = get_object_or_404(
+        Restaurant, slug=restaurant_slug, is_active=True
+    )
+    qr = QRCode.objects.filter(
+        restaurant=restaurant, slug=qr_slug
+    ).first()
 
-
-# ── Customer: Place Order ────────────────────────────────────────────────────
-@require_POST
-def place_order(request, restaurant_slug):
-    restaurant = get_object_or_404(Restaurant, slug=restaurant_slug, is_active=True)
-
-    try:
-        data         = json.loads(request.body)
-        items_data   = data.get("items", [])
-        table_number = data.get("table_number", "").strip()
-        note         = data.get("note", "").strip()
-
-        if not items_data:
-            return JsonResponse({"success": False, "error": "Your cart is empty."}, status=400)
-
-        if not table_number:
-            return JsonResponse({"success": False, "error": "Table number is required."}, status=400)
-
-        # Create order
-        order = Order.objects.create(
-            restaurant=restaurant,
-            table_number=table_number,
-            note=note,
-            status="pending",
+    if not qr:
+        from django.urls import reverse
+        return redirect(
+            reverse("public_menu",
+                    kwargs={"restaurant_slug": restaurant_slug})
         )
 
-        # Add items
-        from apps.menus.models import MenuItem
+    categories = MenuCategory.objects.filter(
+        restaurant=restaurant
+    ).prefetch_related("items")
+
+    if request.method == "POST":
+        # Support both JSON and form POST
+        try:
+            if request.content_type and "application/json" in request.content_type:
+                data = json.loads(request.body)
+            else:
+                data = json.loads(request.body)
+        except Exception:
+            return JsonResponse({"error": "Invalid request."}, status=400)
+
+        items_data    = data.get("items", [])
+        customer_name = data.get("customer_name", "").strip()
+        notes         = data.get("notes", "").strip()
+
+        if not items_data:
+            return JsonResponse({"error": "No items selected."}, status=400)
+
+        order = Order.objects.create(
+            restaurant    = restaurant,
+            table_number  = qr.label,
+            
+            note          = notes,
+            status        = "pending",
+        )
+
         for item_data in items_data:
-            menu_item = MenuItem.objects.filter(pk=item_data.get("id")).first()
-            if menu_item and menu_item.is_available:
-                OrderItem.objects.create(
-                    order=order,
-                    menu_item=menu_item,
-                    name=menu_item.name,
-                    price=menu_item.price,
-                    quantity=int(item_data.get("quantity", 1)),
+            try:
+                menu_item = MenuItem.objects.get(
+                    pk=item_data["id"],
+                    category__restaurant=restaurant,
+                    is_available=True,
                 )
-
+            except (MenuItem.DoesNotExist, KeyError):
+                continue
+            qty = max(1, int(item_data.get("qty", 1)))
+            OrderItem.objects.create(
+                order     = order,
+                menu_item = menu_item,
+                name      = menu_item.name,
+                price     = menu_item.price,
+                quantity  = qty,
+            )
         order.calculate_total()
-
+        
         return JsonResponse({
-            "success":      True,
-            "order_id":     order.pk,
-            "order_number": f"#{order.pk:04d}",
-            "total":        str(order.total_amount),
-            "table":        order.table_number,
-            "items_count":  order.items.count(),
+            "success":  True,
+            "order_id": order.pk,
+            "total":    float(order.total_amount),
         })
 
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
-
-
-# ── Waiter: Orders Dashboard ─────────────────────────────────────────────────
-@login_required
-def orders_dashboard(request):
-    restaurant = _restaurant(request.user)
-    if not restaurant:
-        return redirect("restaurant_edit")
-
-    status_filter = request.GET.get("status", "active")
-
-    if status_filter == "active":
-        orders = Order.objects.filter(
-            restaurant=restaurant
-        ).exclude(status__in=["completed", "cancelled"]).prefetch_related("items")
-    elif status_filter == "completed":
-        orders = Order.objects.filter(
-            restaurant=restaurant,
-            status="completed"
-        ).prefetch_related("items")[:50]
-    else:
-        orders = Order.objects.filter(
-            restaurant=restaurant
-        ).prefetch_related("items")[:100]
-
-    return render(request, "orders/dashboard.html", {
-        "orders":        orders,
-        "status_filter": status_filter,
-        "restaurant":    restaurant,
+    return render(request, "orders/place_order.html", {
+        "restaurant": restaurant,
+        "categories": categories,
+        "qr":         qr,
     })
 
 
-# ── Waiter: Update Order Status ───────────────────────────────────────────────
-@login_required
-@require_POST
-def update_order_status(request, pk):
-    restaurant = _restaurant(request.user)
-    order      = get_object_or_404(Order, pk=pk, restaurant=restaurant)
-    new_status = request.POST.get("status")
-
-    valid = ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"]
-    if new_status in valid:
-        order.status = new_status
-        order.save(update_fields=["status", "updated_at"])
-        messages.success(request, f"Order #{order.pk:04d} marked as {new_status}.")
-
-    # HTMX: return just the order card
-    if request.headers.get("HX-Request"):
-        return render(request, "orders/partials/order_card.html", {"order": order})
-
-    return redirect("orders_dashboard")
-
-
-# ── HTMX: Poll for new orders (auto-refresh) ─────────────────────────────────
-@login_required
-def orders_poll(request):
-    """Returns active orders HTML for HTMX polling."""
-    restaurant = _restaurant(request.user)
-    if not restaurant:
-        return JsonResponse({})
-
-    orders = Order.objects.filter(
-        restaurant=restaurant
-    ).exclude(status__in=["completed", "cancelled"]).prefetch_related("items")
-
-    return render(request, "orders/partials/orders_list.html", {"orders": orders})
-
-
-# ── Customer: Order Status Check ─────────────────────────────────────────────
-def order_status(request, order_id):
+def order_confirm(request, order_id):
     order = get_object_or_404(Order, pk=order_id)
-    return JsonResponse({
-        "status":       order.status,
-        "status_label": order.get_status_display(),
-        "updated_at":   order.updated_at.strftime("%H:%M"),
-    })
+    return render(request, "orders/order_confirm.html", {"order": order})

@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitchen — {{ restaurant.name }}</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <style>
+    body{background:#0D0D0D;color:#fff;margin:0;font-family:'DM Sans',sans-serif;}
+    .ks-header{background:#1A1A1A;border-bottom:1px solid #333;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+    .ks-title{font-size:1.2rem;font-weight:700;color:#fff;}
+    .ks-sub{font-size:0.8rem;color:#888;margin-top:0.1rem;}
+    .live-dot{width:10px;height:10px;background:#22C55E;border-radius:50%;display:inline-block;margin-right:0.4rem;animation:pulse 1.5s infinite;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+    .ks-body{padding:1.25rem;}
+    .ks-stats{display:flex;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap;}
+    .ks-stat{background:#1A1A1A;border:1px solid #333;border-radius:12px;padding:0.75rem 1.25rem;text-align:center;}
+    .ks-stat__num{font-size:1.5rem;font-weight:700;color:#E63946;}
+    .ks-stat__label{font-size:0.72rem;color:#666;text-transform:uppercase;letter-spacing:0.06em;margin-top:0.1rem;}
+    .ks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;}
+    .order-card{background:#1A1A1A;border-radius:16px;overflow:hidden;border:2px solid #333;transition:all 0.3s;}
+    .order-card.status-pending{border-color:#EAB308;}
+    .order-card.status-confirmed{border-color:#3B82F6;}
+    .order-card.status-preparing{border-color:#F97316;}
+    .order-card.status-ready{border-color:#22C55E;}
+    .order-header{padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;}
+    .order-table{font-weight:700;font-size:1rem;color:#fff;}
+    .order-time{font-size:0.75rem;color:#888;}
+    .order-status{font-size:0.75rem;font-weight:700;padding:0.2rem 0.65rem;border-radius:100px;}
+    .badge-pending{background:#FEF9C3;color:#854D0E;}
+    .badge-confirmed{background:#DBEAFE;color:#1E40AF;}
+    .badge-preparing{background:#FFF7ED;color:#C2410C;}
+    .badge-ready{background:#DCFCE7;color:#166534;}
+    .order-items{padding:0 1rem 0.75rem;border-top:1px solid #2A2A2A;}
+    .order-item-row{display:flex;justify-content:space-between;padding:0.4rem 0;font-size:0.875rem;border-bottom:1px solid #222;color:#CCC;}
+    .qty-badge{background:#333;color:#fff;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.75rem;font-weight:700;margin-right:0.4rem;}
+    .order-footer{padding:0.75rem 1rem;border-top:1px solid #2A2A2A;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;}
+    .order-total{font-size:0.9rem;font-weight:700;color:#fff;}
+    .status-btns{display:flex;gap:0.4rem;flex-wrap:wrap;}
+    .ks-btn{border:none;padding:0.35rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+    .btn-confirm{background:#3B82F6;color:#fff;}
+    .btn-prepare{background:#F97316;color:#fff;}
+    .btn-ready{background:#22C55E;color:#fff;}
+    .btn-complete{background:#6B7280;color:#fff;}
+    .btn-cancel{background:#EF4444;color:#fff;}
+    .customer-note{padding:0.5rem 1rem;background:#111;font-size:0.8rem;color:#888;}
+    .empty-state{text-align:center;padding:5rem 1rem;grid-column:1/-1;}
+    .empty-state .icon{font-size:4rem;margin-bottom:1rem;opacity:0.3;}
+    .empty-state p{color:#666;}
+    .new-order-flash{position:fixed;top:1rem;right:1rem;z-index:999;background:#22C55E;color:#fff;padding:0.75rem 1.25rem;border-radius:12px;font-weight:700;font-size:0.9rem;box-shadow:0 8px 24px rgba(34,197,94,0.4);display:none;}
+  </style>
+</head>
+<body>
+<div class="ks-header">
+  <div>
+    <div class="ks-title">🍽 {{ restaurant.name }} — Kitchen Screen</div>
+    <div class="ks-sub"><span class="live-dot"></span>Live · Auto-refreshes every 8 seconds</div>
+  </div>
+  <a href="{% url 'dashboard' %}" style="color:#888;font-size:0.85rem;text-decoration:none;">← Dashboard</a>
+</div>
+
+<div class="new-order-flash" id="newFlash">🔔 New Order!</div>
+
+<div class="ks-body">
+  <div class="ks-stats">
+    <div class="ks-stat">
+      <div class="ks-stat__num" id="statTotal">{{ active_orders.count }}</div>
+      <div class="ks-stat__label">Active Orders</div>
+    </div>
+  </div>
+
+  <div class="ks-grid" id="ordersGrid">
+    {% for order in active_orders %}
+    <div class="order-card status-{{ order.status }}" id="order-{{ order.pk }}">
+      <div class="order-header">
+        <div>
+          <div class="order-table">📍 {{ order.table_number }}</div>
+          {% if order.customer_name %}
+            <div style="font-size:0.78rem;color:#888;">{{ order.customer_name }}</div>
+          {% endif %}
+        </div>
+        <div style="text-align:right;">
+          <div class="order-status badge-{{ order.status }}">{{ order.get_status_display }}</div>
+          <div class="order-time">{{ order.created_at|date:"H:i" }}</div>
+        </div>
+      </div>
+      <div class="order-items">
+        {% for item in order.items.all %}
+        <div class="order-item-row">
+          <span><span class="qty-badge">×{{ item.quantity }}</span>{{ item.name }}</span>
+          <span style="color:#888;">₹{{ item.subtotal }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if order.notes %}<div class="customer-note">📝 {{ order.notes }}</div>{% endif %}
+      <div class="order-footer">
+        <div class="order-total">₹{{ order.get_total }}</div>
+        <div class="status-btns">
+          {% if order.status == 'pending' %}
+            <button class="ks-btn btn-confirm" onclick="setStatus({{ order.pk }},'confirmed')">Confirm</button>
+            <button class="ks-btn btn-cancel"  onclick="setStatus({{ order.pk }},'cancelled')">Cancel</button>
+          {% elif order.status == 'confirmed' %}
+            <button class="ks-btn btn-prepare" onclick="setStatus({{ order.pk }},'preparing')">Preparing</button>
+          {% elif order.status == 'preparing' %}
+            <button class="ks-btn btn-ready"   onclick="setStatus({{ order.pk }},'ready')">Ready ✓</button>
+          {% elif order.status == 'ready' %}
+            <button class="ks-btn btn-complete" onclick="setStatus({{ order.pk }},'completed')">Served ✓</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <div class="icon">🍽</div>
+      <p>No active orders right now.</p>
+      <p style="font-size:0.8rem;margin-top:0.5rem;color:#555;">Orders appear here automatically when customers place them.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  const UPDATE_URL = "{% url 'update_order_status' 0 %}".replace('/0/','/');
+  const JSON_URL   = "{% url 'orders_json' %}";
+  const CSRF       = '{{ csrf_token }}';
+  let   lastCount  = {{ active_orders.count }};
+
+  async function setStatus(id, status) {
+    try {
+      const r = await fetch(UPDATE_URL + id + '/', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+        body: JSON.stringify({status})
+      });
+      if (r.ok) refreshOrders();
+    } catch(e) { console.error(e); }
+  }
+
+  async function refreshOrders() {
+    try {
+      const r    = await fetch(JSON_URL);
+      const data = await r.json();
+      document.getElementById('statTotal').textContent = data.orders.length;
+      if (data.orders.length > lastCount) {
+        document.getElementById('newFlash').style.display = 'block';
+        setTimeout(() => document.getElementById('newFlash').style.display = 'none', 3000);
+      }
+      lastCount = data.orders.length;
+      const grid = document.getElementById('ordersGrid');
+      if (!data.orders.length) {
+        grid.innerHTML = '<div class="empty-state"><div class="icon">🍽</div><p>No active orders right now.</p></div>';
+        return;
+      }
+      const labels = {pending:'Pending',confirmed:'Confirmed',preparing:'Preparing',ready:'Ready'};
+      const mkBtns = (o) => {
+        if (o.status==='pending')   return `<button class="ks-btn btn-confirm" onclick="setStatus(${o.id},'confirmed')">Confirm</button><button class="ks-btn btn-cancel" onclick="setStatus(${o.id},'cancelled')">Cancel</button>`;
+        if (o.status==='confirmed') return `<button class="ks-btn btn-prepare" onclick="setStatus(${o.id},'preparing')">Preparing</button>`;
+        if (o.status==='preparing') return `<button class="ks-btn btn-ready"   onclick="setStatus(${o.id},'ready')">Ready ✓</button>`;
+        if (o.status==='ready')     return `<button class="ks-btn btn-complete" onclick="setStatus(${o.id},'completed')">Served ✓</button>`;
+        return '';
+      };
+      grid.innerHTML = data.orders.map(o => `
+        <div class="order-card status-${o.status}">
+          <div class="order-header">
+            <div>
+              <div class="order-table">📍 ${o.table}</div>
+              ${o.customer?`<div style="font-size:0.78rem;color:#888;">${o.customer}</div>`:''}
+            </div>
+            <div style="text-align:right;">
+              <div class="order-status badge-${o.status}">${labels[o.status]||o.status}</div>
+              <div class="order-time">${o.created_at}</div>
+            </div>
+          </div>
+          <div class="order-items">
+            ${o.items.map(i=>`<div class="order-item-row"><span><span class="qty-badge">×${i.qty}</span>${i.name}</span><span style="color:#888;">₹${(i.price*i.qty).toFixed(2)}</span></div>`).join('')}
+          </div>
+          ${o.notes?`<div class="customer-note">📝 ${o.notes}</div>`:''}
+          <div class="order-footer">
+            <div class="order-total">₹${o.total.toFixed(2)}</div>
+            <div class="status-btns">${mkBtns(o)}</div>
+          </div>
+        </div>`).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  setInterval(refreshOrders, 8000);
+</script>
+</body>
+</html>

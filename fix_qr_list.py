@@ -1,0 +1,165 @@
+data = """{% extends "base.html" %}
+{% block title %}QR Codes{% endblock %}
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">QR Codes</h1>
+      <p class="page-header__sub">One QR code per table — customers scan to see your menu instantly</p>
+    </div>
+    <a href="{% url 'qr_create' %}" class="btn btn--primary">+ New QR Code</a>
+  </div>
+
+  {% if qrcodes %}
+
+    <!-- Stats row -->
+    <div class="stats-grid" style="margin-bottom:2rem;">
+      <div class="stat-card">
+        <div class="stat-card__icon">📱</div>
+        <div class="stat-card__value">{{ qrcodes.count }}</div>
+        <div class="stat-card__label">Total QR Codes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon">👁</div>
+        <div class="stat-card__value">
+          {% with total=0 %}
+            {% for qr in qrcodes %}{{ qr.scan_count }}{% endfor %}
+          {% endwith %}
+          —
+        </div>
+        <div class="stat-card__label">Total Scans</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon">🖨</div>
+        <div class="stat-card__value">3</div>
+        <div class="stat-card__label">Print Templates</div>
+      </div>
+    </div>
+
+    <!-- QR cards -->
+    {% for qr in qrcodes %}
+    <div class="card mb-2" style="transition:all 0.2s;"
+         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'"
+         onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div class="card__body"
+           style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+
+        <!-- Left: info -->
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="width:48px;height:48px;background:var(--brand-light);border-radius:12px;
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:1.5rem;flex-shrink:0;">📱</div>
+          <div>
+            <div style="font-weight:700;font-size:1rem;color:var(--dark);">{{ qr.label }}</div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-top:0.15rem;font-family:monospace;">
+              /m/{{ qr.restaurant.slug }}/{{ qr.slug }}/
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.4rem;flex-wrap:wrap;">
+              <span class="badge badge--blue">👁 {{ qr.scan_count }} scan{{ qr.scan_count|pluralize }}</span>
+              {% if qr.last_scanned %}
+                <span class="badge badge--green">Last: {{ qr.last_scanned|date:"M d, Y" }}</span>
+              {% else %}
+                <span class="badge badge--gray">Never scanned</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: actions -->
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+          <a href="{% url 'qr_download' qr.pk %}"
+             class="btn btn--success btn--sm">
+            ⬇ Download PNG
+          </a>
+          <a href="/m/{{ qr.restaurant.slug }}/{{ qr.slug }}/"
+             target="_blank"
+             class="btn btn--ghost btn--sm">
+            👁 Preview
+          </a>
+          <a href="{% url 'qr_delete' qr.pk %}"
+             class="btn btn--danger btn--sm">
+            🗑
+          </a>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Print tip -->
+    <div class="card mt-3"
+         style="background:linear-gradient(135deg,#FFFBEA,#FFF3CD);border-color:#FCD34D;">
+      <div class="card__body">
+        <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+          <div style="font-size:1.5rem;flex-shrink:0;">💡</div>
+          <div>
+            <div style="font-weight:700;font-size:0.9rem;color:#92400E;margin-bottom:0.4rem;">
+              Printing Tips
+            </div>
+            <ul style="font-size:0.85rem;color:#92400E;line-height:1.8;padding-left:1.25rem;">
+              <li>Print at <strong>A5 or A6 size</strong> for table stands</li>
+              <li>Use a <strong>laminator</strong> to make them spill-proof</li>
+              <li>The QR code works even if slightly bent or folded</li>
+              <li>Place it in the <strong>center of the table</strong> for best visibility</li>
+              <li>Each template includes your restaurant name automatically</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+
+    <!-- Empty state -->
+    <div class="empty-state">
+      <div class="empty-state__icon">📱</div>
+      <div class="empty-state__title">No QR codes yet</div>
+      <p class="empty-state__text">
+        Create one QR code per table. Label them "Table 1", "Table 2", "Bar Counter" etc.
+        Customers scan the code to instantly see your menu — no app needed.
+      </p>
+      <a href="{% url 'qr_create' %}" class="btn btn--primary">+ Create First QR Code</a>
+    </div>
+
+    <!-- How it works when empty -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+                gap:1rem;margin-top:2rem;">
+      <div class="card" style="text-align:center;padding:1.5rem;">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">1️⃣</div>
+        <div style="font-weight:600;font-size:0.9rem;">Create a QR Code</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.35rem;">
+          Label it "Table 1", "Bar" etc.
+        </div>
+      </div>
+      <div class="card" style="text-align:center;padding:1.5rem;">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">2️⃣</div>
+        <div style="font-weight:600;font-size:0.9rem;">Choose a Template</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.35rem;">
+          Pick Dark, Light or Bold design
+        </div>
+      </div>
+      <div class="card" style="text-align:center;padding:1.5rem;">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">3️⃣</div>
+        <div style="font-weight:600;font-size:0.9rem;">Print & Place</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.35rem;">
+          Print PNG and place on table
+        </div>
+      </div>
+      <div class="card" style="text-align:center;padding:1.5rem;">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">4️⃣</div>
+        <div style="font-weight:600;font-size:0.9rem;">Customers Scan</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.35rem;">
+          Menu opens instantly, no app needed
+        </div>
+      </div>
+    </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}"""
+
+with open(r'C:\Users\acer\Desktop\QRmenu\templates\qrcodes\qr_list.html', 'w', encoding='utf-8') as f:
+    f.write(data)
+print("Done! qr_list.html written successfully.")

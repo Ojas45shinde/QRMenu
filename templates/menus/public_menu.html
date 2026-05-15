@@ -6,323 +6,330 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ restaurant.name }} — Menu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root { --brand: {{ restaurant.theme_color }}; --brand-dark: {{ restaurant.theme_color }}; --brand-light: {{ restaurant.theme_color }}18; }
-    .menu-header   { background: var(--brand); }
-    .menu-tab:hover,.menu-tab--active { background:var(--brand);color:#fff!important;border-color:var(--brand); }
-    .menu-section__title { color:var(--brand);border-color:var(--brand); }
-    .menu-card__price    { color:var(--brand); }
-    /* Cart */
-    .cart-bar { position:fixed;bottom:0;left:0;right:0;background:var(--brand);color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;z-index:200;transform:translateY(100%);transition:transform 0.3s ease;box-shadow:0 -4px 20px rgba(0,0,0,0.15); }
-    .cart-bar.visible { transform:translateY(0); }
-    .cart-bar__info { font-size:0.9rem; }
-    .cart-bar__count { font-weight:700;font-size:1.1rem; }
-    .cart-bar__total { font-size:0.85rem;opacity:0.85; }
-    .cart-bar__btn { background:#fff;color:var(--brand);border:none;padding:0.6rem 1.4rem;border-radius:100px;font-weight:700;font-size:0.9rem;cursor:pointer; }
-    /* Item add button */
-    .item-add-btn { background:var(--brand);color:#fff;border:none;width:30px;height:30px;border-radius:50%;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:0.4rem; }
-    .item-qty-ctrl { display:flex;align-items:center;gap:0.5rem;margin-top:0.4rem; }
-    .item-qty-btn { background:var(--brand);color:#fff;border:none;width:26px;height:26px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center; }
-    .item-qty-num { font-weight:700;font-size:0.95rem;min-width:20px;text-align:center; }
-    /* Cart modal */
-    .cart-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:none; }
-    .cart-modal { position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;z-index:400;max-height:85vh;overflow-y:auto;padding:1.5rem;display:none; }
-    .cart-modal.open,.cart-overlay.open { display:block; }
-    /* Order confirmation */
-    .confirm-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:center;justify-content:center; }
-    .confirm-overlay.open { display:flex; }
-    .confirm-box { background:#fff;border-radius:20px;padding:2rem;max-width:360px;width:90%;text-align:center; }
-    .confirm-icon { font-size:3rem;margin-bottom:1rem; }
+    :root {
+      --brand:     {{ restaurant.theme_color }};
+      --brand-rgb: 230, 57, 70;
+      --font-d: 'Playfair Display', Georgia, serif;
+      --font-b: 'DM Sans', sans-serif;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { font-family:var(--font-b); background:#F8F7F4;
+           color:#1A1A1A; padding-bottom:2rem; }
+
+    /* ── HERO HEADER ─────────────────────────── */
+    .menu-hero {
+      background: linear-gradient(160deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 70%, #000) 100%);
+      padding: 2.5rem 1.25rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .menu-hero::before {
+      content:'';
+      position:absolute; inset:0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%,
+                  rgba(255,255,255,0.12) 0%, transparent 70%);
+    }
+    .menu-hero::after {
+      content:'';
+      position:absolute; bottom:-2px; left:0; right:0; height:32px;
+      background:#F8F7F4;
+      clip-path: ellipse(55% 100% at 50% 100%);
+    }
+    .hero-logo {
+      width: 80px; height: 80px;
+      border-radius: 50%; object-fit: cover;
+      border: 3px solid rgba(255,255,255,0.4);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      margin: 0 auto 0.85rem;
+      display: block; position: relative;
+    }
+    .hero-logo-placeholder {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; margin: 0 auto 0.85rem; position: relative;
+    }
+    .hero-name {
+      font-family: var(--font-d);
+      font-size: 2rem; font-weight: 700;
+      color: #fff; position: relative;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .hero-desc {
+      font-size: 0.875rem; color: rgba(255,255,255,0.75);
+      margin-top: 0.4rem; position: relative;
+    }
+    .hero-info {
+      display: flex; gap: 1.25rem; justify-content: center;
+      margin-top: 0.85rem; position: relative;
+    }
+    .hero-info span {
+      font-size: 0.78rem; color: rgba(255,255,255,0.65);
+      display: flex; align-items: center; gap: 0.3rem;
+    }
+
+    /* ── CATEGORY TABS ───────────────────────── */
+    .cat-tabs {
+      position: sticky; top: 0; z-index: 50;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .cat-tabs::-webkit-scrollbar { display: none; }
+    .cat-tabs-inner {
+      display: flex; gap: 0; padding: 0 0.5rem;
+      white-space: nowrap; min-width: max-content;
+    }
+    .cat-tab {
+      padding: 0.85rem 1.1rem;
+      font-size: 0.85rem; font-weight: 500;
+      color: #888; border-bottom: 3px solid transparent;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.2s; display: inline-block;
+      white-space: nowrap;
+    }
+    .cat-tab:hover { color: var(--brand); }
+    .cat-tab.active {
+      color: var(--brand);
+      border-bottom-color: var(--brand);
+      font-weight: 600;
+    }
+
+    /* ── MENU SECTIONS ───────────────────────── */
+    .menu-body { padding: 0 0.75rem; }
+
+    .menu-section { padding: 1.5rem 0 0.5rem; }
+    .section-header {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: var(--font-d);
+      font-size: 1.3rem; font-weight: 700;
+      color: #1A1A1A;
+    }
+    .section-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--brand), transparent);
+      opacity: 0.3;
+    }
+    .section-count {
+      font-size: 0.75rem; color: #aaa;
+      background: #f0f0f0; padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+    }
+
+    /* ── ITEM CARDS ──────────────────────────── */
+    .item-card {
+      background: #fff;
+      border-radius: 16px;
+      margin-bottom: 0.75rem;
+      display: flex;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      border: 1px solid #F0EDE8;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .item-card:hover {
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      transform: translateY(-1px);
+    }
+    .item-img {
+      width: 100px; flex-shrink: 0;
+      object-fit: cover; display: block;
+    }
+    .item-img-placeholder {
+      width: 100px; flex-shrink: 0;
+      background: linear-gradient(135deg, #F8F7F4, #EDE9E3);
+      display: flex; align-items: center;
+      justify-content: center; font-size: 1.75rem;
+    }
+    .item-body { padding: 0.9rem 1rem; flex: 1; display: flex;
+                 flex-direction: column; justify-content: space-between; }
+    .item-top  { display: flex; justify-content: space-between;
+                 align-items: flex-start; gap: 0.5rem; }
+    .item-name {
+      font-weight: 600; font-size: 0.95rem;
+      color: #1A1A1A; line-height: 1.3;
+    }
+    .item-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.3rem; }
+    .badge {
+      font-size: 0.68rem; font-weight: 700;
+      padding: 0.15rem 0.45rem; border-radius: 4px;
+      display: inline-flex; align-items: center; gap: 0.2rem;
+    }
+    .badge-popular { background: #FEF9C3; color: #854D0E; }
+    .badge-new     { background: #DCFCE7; color: #166534; }
+    .item-desc {
+      font-size: 0.8rem; color: #999;
+      margin-top: 0.4rem; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .item-footer {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-top: 0.6rem;
+    }
+    .item-price {
+      font-family: var(--font-d);
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--brand);
+    }
+    .item-price-label {
+      font-size: 0.7rem; color: #bbb;
+      font-family: var(--font-b); font-weight: 400;
+    }
+
+    /* ── EMPTY STATE ─────────────────────────── */
+    .empty-menu {
+      text-align: center; padding: 4rem 1.5rem;
+    }
+    .empty-menu .icon { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; }
+    .empty-menu p { color: #aaa; font-size: 0.9rem; }
+
+    /* ── FOOTER ──────────────────────────────── */
+    .menu-footer {
+      text-align: center; padding: 2rem 1rem 1rem;
+      color: #ccc; font-size: 0.75rem;
+    }
   </style>
 </head>
-<body style="background:#F8F7F4;padding-bottom:5rem;">
+<body>
 
-  <!-- Header -->
-  <div class="menu-header">
-    {% if restaurant.logo %}
-      <img src="{{ restaurant.logo.url }}" class="menu-header__logo" alt="{{ restaurant.name }}">
-    {% else %}
-      <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 0.75rem;">🍽</div>
-    {% endif %}
-    <h1 class="menu-header__name">{{ restaurant.name }}</h1>
-    {% if restaurant.description %}
-      <p class="menu-header__desc">{{ restaurant.description }}</p>
-    {% endif %}
-  </div>
-
-  <!-- Category tabs -->
-  {% if categories %}
-  <div class="menu-tabs">
-    <div class="menu-tabs__inner">
-      {% for cat in categories %}
-        <a href="#cat-{{ cat.pk }}" class="menu-tab">{{ cat.name }}</a>
-      {% endfor %}
-    </div>
-  </div>
+<!-- Hero Header -->
+<div class="menu-hero">
+  {% if restaurant.logo %}
+    <img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="hero-logo">
+  {% else %}
+    <div class="hero-logo-placeholder">🍽</div>
   {% endif %}
+  <h1 class="hero-name">{{ restaurant.name }}</h1>
+  {% if restaurant.description %}
+    <p class="hero-desc">{{ restaurant.description }}</p>
+  {% endif %}
+  <div class="hero-info">
+    {% if restaurant.phone %}
+      <span>📞 {{ restaurant.phone }}</span>
+    {% endif %}
+    {% if restaurant.address %}
+      <span>📍 {{ restaurant.address|truncatechars:30 }}</span>
+    {% endif %}
+  </div>
+</div>
 
-  <!-- Menu sections -->
+<!-- Category Tabs -->
+{% if categories %}
+<div class="cat-tabs">
+  <div class="cat-tabs-inner">
+    {% for cat in categories %}
+      <a href="#sec-{{ cat.pk }}"
+         class="cat-tab"
+         data-cat="{{ cat.pk }}">
+        {{ cat.name }}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Menu Body -->
+<div class="menu-body">
   {% for cat in categories %}
-    <div class="menu-section" id="cat-{{ cat.pk }}">
-      <h2 class="menu-section__title">{{ cat.name }}</h2>
-      {% for item in cat.items.all %}
+    {% with items=cat.items.all %}
+    <div class="menu-section" id="sec-{{ cat.pk }}">
+      <div class="section-header">
+        <h2 class="section-title">{{ cat.name }}</h2>
+        <div class="section-line"></div>
+        <span class="section-count">{{ items|length }}</span>
+      </div>
+
+      {% for item in items %}
         {% if item.is_available %}
-        <div class="menu-card" id="item-card-{{ item.pk }}">
-          {% if item.image %}<img src="{{ item.image.url }}" class="menu-card__img" alt="{{ item.name }}">{% endif %}
-          <div class="menu-card__body">
-            <div class="menu-card__top">
-              <span class="menu-card__name">{{ item.name }}</span>
-              {% if item.is_popular %}<span class="menu-card__popular">⭐ Popular</span>{% endif %}
+        <div class="item-card">
+
+          {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.name }}" class="item-img">
+          {% else %}
+            <div class="item-img-placeholder">🍴</div>
+          {% endif %}
+
+          <div class="item-body">
+            <div>
+              <div class="item-top">
+                <span class="item-name">{{ item.name }}</span>
+              </div>
+              <div class="item-badges">
+                {% if item.is_popular %}
+                  <span class="badge badge-popular">⭐ Popular</span>
+                {% endif %}
+              </div>
+              {% if item.description %}
+                <p class="item-desc">{{ item.description }}</p>
+              {% endif %}
             </div>
-            {% if item.description %}<p class="menu-card__desc">{{ item.description }}</p>{% endif %}
-            <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-              <p class="menu-card__price">₹{{ item.price }}</p>
-              <!-- Add to cart controls -->
-              <div id="ctrl-{{ item.pk }}">
-                <button class="item-add-btn"
-                        onclick="addToCart({{ item.pk }}, '{{ item.name|escapejs }}', {{ item.price }})"
-                        title="Add to order">+</button>
+            <div class="item-footer">
+              <div>
+                <div class="item-price-label">Price</div>
+                <div class="item-price">₹{{ item.price }}</div>
               </div>
             </div>
           </div>
+
         </div>
         {% endif %}
+      {% empty %}
+        <p style="color:#bbb;font-size:0.85rem;padding:0.5rem 0;">
+          No items in this category yet.
+        </p>
       {% endfor %}
     </div>
+    {% endwith %}
+  {% empty %}
+    <div class="empty-menu">
+      <div class="icon">🍽</div>
+      <p>Menu coming soon!</p>
+    </div>
   {% endfor %}
+</div>
 
-  <!-- Cart bar (bottom) -->
-  <div class="cart-bar" id="cart-bar">
-    <div class="cart-bar__info">
-      <div class="cart-bar__count" id="cart-count">0 items</div>
-      <div class="cart-bar__total" id="cart-total">₹0.00</div>
-    </div>
-    <button class="cart-bar__btn" onclick="openCart()">View Order →</button>
-  </div>
+<!-- Footer -->
+<div class="menu-footer">
+  <p>{{ restaurant.name }} · Digital Menu</p>
+  <p style="margin-top:0.25rem;">Powered by QR Menu</p>
+</div>
 
-  <!-- Cart overlay -->
-  <div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+<script>
+  // Highlight tab on scroll
+  const sections = document.querySelectorAll('.menu-section[id]');
+  const tabs     = document.querySelectorAll('.cat-tab');
 
-  <!-- Cart modal -->
-  <div class="cart-modal" id="cart-modal">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-      <h2 style="font-size:1.2rem;font-family:var(--font-display);">Your Order</h2>
-      <button onclick="closeCart()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);">×</button>
-    </div>
-
-    <div id="cart-items-list"></div>
-
-    <div style="border-top:1px solid var(--border);margin-top:1rem;padding-top:1rem;">
-      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;margin-bottom:1.25rem;">
-        <span>Total</span><span id="cart-modal-total">₹0.00</span>
-      </div>
-
-      <div style="margin-bottom:1rem;">
-        <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:0.4rem;">
-          Table Number <span style="color:var(--brand)">*</span>
-        </label>
-        <input type="text" id="table-number" placeholder="e.g. Table 3"
-               style="width:100%;padding:0.6rem 0.9rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;outline:none;"
-               onfocus="this.style.borderColor='{{ restaurant.theme_color }}'"
-               onblur="this.style.borderColor='var(--border)'">
-      </div>
-
-      <div style="margin-bottom:1.25rem;">
-        <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:0.4rem;">
-          Special Instructions (optional)
-        </label>
-        <textarea id="order-note" placeholder="e.g. No onions, extra spicy..."
-                  rows="2"
-                  style="width:100%;padding:0.6rem 0.9rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;resize:none;outline:none;font-family:inherit;"
-                  onfocus="this.style.borderColor='{{ restaurant.theme_color }}'"
-                  onblur="this.style.borderColor='var(--border)'"></textarea>
-      </div>
-
-      <button onclick="placeOrder()"
-              id="place-order-btn"
-              style="width:100%;background:var(--brand);color:#fff;border:none;padding:0.9rem;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;">
-        Place Order
-      </button>
-    </div>
-  </div>
-
-  <!-- Order confirmation modal -->
-  <div class="confirm-overlay" id="confirm-overlay">
-    <div class="confirm-box">
-      <div class="confirm-icon">🎉</div>
-      <h2 style="font-size:1.4rem;font-family:var(--font-display);margin-bottom:0.5rem;">Order Placed!</h2>
-      <p id="confirm-order-num" style="font-size:1rem;font-weight:700;color:var(--brand);margin-bottom:0.5rem;"></p>
-      <p id="confirm-details" style="font-size:0.875rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;"></p>
-      <button onclick="closeConfirm()"
-              style="width:100%;background:var(--brand);color:#fff;border:none;padding:0.8rem;border-radius:12px;font-weight:700;font-size:0.95rem;cursor:pointer;">
-        Back to Menu
-      </button>
-    </div>
-  </div>
-
-  <script src="{% static 'js/main.js' %}"></script>
-  <script>
-    // Cart state
-    let cart = {};
-
-    function addToCart(id, name, price) {
-      if(cart[id]) {
-        cart[id].qty += 1;
-      } else {
-        cart[id] = { id, name, price: parseFloat(price), qty: 1 };
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id.replace('sec-','');
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.cat === id));
       }
-      updateCartUI();
-      updateItemCtrl(id);
-    }
+    });
+  }, { rootMargin: '-25% 0px -65% 0px' });
 
-    function removeFromCart(id) {
-      if(cart[id]) {
-        cart[id].qty -= 1;
-        if(cart[id].qty <= 0) delete cart[id];
+  sections.forEach(s => obs.observe(s));
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(tab.getAttribute('href'));
+      if (target) {
+        const offset = 60;
+        const top    = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
       }
-      updateCartUI();
-      updateItemCtrl(id);
-    }
-
-    function updateItemCtrl(id) {
-      const ctrl = document.getElementById('ctrl-' + id);
-      if(!ctrl) return;
-      const item = cart[id];
-      if(!item || item.qty === 0) {
-        ctrl.innerHTML = '<button class="item-add-btn" onclick="addToCart('+id+', \''+encodeURIComponent(ctrl.dataset.name||'')+'\', '+ctrl.dataset.price+')" title="Add">+</button>';
-        // Re-set after replace
-        const btn = ctrl.querySelector('button');
-        if(btn) {
-          const card = ctrl.closest('.menu-card');
-          const nameEl = card ? card.querySelector('.menu-card__name') : null;
-          const priceEl = card ? card.querySelector('.menu-card__price') : null;
-          const name = nameEl ? nameEl.textContent.trim() : '';
-          const price = priceEl ? priceEl.textContent.replace('₹','').trim() : '0';
-          btn.onclick = () => addToCart(id, name, parseFloat(price));
-        }
-      } else {
-        ctrl.innerHTML = '<div class="item-qty-ctrl"><button class="item-qty-btn" onclick="removeFromCart('+id+')">−</button><span class="item-qty-num">'+item.qty+'</span><button class="item-qty-btn" onclick="addToCart('+id+', \''+item.name.replace(/'/g,"\\'")+'\', '+item.price+')">+</button></div>';
-      }
-    }
-
-    function cartTotal() {
-      return Object.values(cart).reduce((s,i) => s + i.price * i.qty, 0);
-    }
-
-    function cartCount() {
-      return Object.values(cart).reduce((s,i) => s + i.qty, 0);
-    }
-
-    function updateCartUI() {
-      const count = cartCount();
-      const total = cartTotal();
-      document.getElementById('cart-count').textContent = count + ' item' + (count !== 1 ? 's' : '');
-      document.getElementById('cart-total').textContent = '₹' + total.toFixed(2);
-      document.getElementById('cart-bar').classList.toggle('visible', count > 0);
-      renderCartItems();
-    }
-
-    function renderCartItems() {
-      const list = document.getElementById('cart-items-list');
-      if(!list) return;
-      const items = Object.values(cart);
-      if(items.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:var(--muted);padding:1rem;">Your cart is empty</p>';
-      } else {
-        list.innerHTML = items.map(item => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
-            <div style="flex:1;">
-              <div style="font-weight:600;font-size:0.9rem;">${item.name}</div>
-              <div style="font-size:0.8rem;color:var(--muted);">₹${item.price.toFixed(2)} each</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-              <button class="item-qty-btn" onclick="removeFromCart(${item.id});renderCartItems();">−</button>
-              <span style="font-weight:700;min-width:20px;text-align:center;">${item.qty}</span>
-              <button class="item-qty-btn" onclick="addToCart(${item.id},'${item.name.replace(/'/g,"\\'")}',${item.price});renderCartItems();">+</button>
-            </div>
-            <div style="font-weight:700;font-size:0.9rem;margin-left:1rem;min-width:60px;text-align:right;">₹${(item.price * item.qty).toFixed(2)}</div>
-          </div>
-        `).join('');
-      }
-      document.getElementById('cart-modal-total').textContent = '₹' + cartTotal().toFixed(2);
-    }
-
-    function openCart()  { document.getElementById('cart-modal').classList.add('open'); document.getElementById('cart-overlay').classList.add('open'); renderCartItems(); }
-    function closeCart() { document.getElementById('cart-modal').classList.remove('open'); document.getElementById('cart-overlay').classList.remove('open'); }
-    function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
-
-    function placeOrder() {
-      const table = document.getElementById('table-number').value.trim();
-      const note  = document.getElementById('order-note').value.trim();
-      const items = Object.values(cart);
-
-      if(items.length === 0) { alert('Add items to your order first!'); return; }
-      if(!table) {
-        document.getElementById('table-number').focus();
-        document.getElementById('table-number').style.borderColor = '#E63946';
-        return;
-      }
-
-      const btn = document.getElementById('place-order-btn');
-      btn.textContent = 'Placing Order...';
-      btn.disabled = true;
-
-      fetch("{% url 'place_order' restaurant.slug %}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify({
-          items: items.map(i => ({ id: i.id, quantity: i.qty })),
-          table_number: table,
-          note: note,
-        })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if(data.success) {
-          closeCart();
-          // Show confirmation
-          document.getElementById('confirm-order-num').textContent = 'Order ' + data.order_number;
-          document.getElementById('confirm-details').innerHTML =
-            '📍 Table: <strong>' + data.table + '</strong><br>' +
-            '🍽 Items: <strong>' + data.items_count + '</strong><br>' +
-            '💰 Total: <strong>₹' + data.total + '</strong><br><br>' +
-            'Your order has been sent to the kitchen. A waiter will confirm shortly.';
-          document.getElementById('confirm-overlay').classList.add('open');
-          // Clear cart
-          cart = {};
-          updateCartUI();
-          // Reset controls
-          document.querySelectorAll('.item-qty-ctrl').forEach(ctrl => {
-            const parent = ctrl.closest('[id^="ctrl-"]');
-            if(parent) {
-              const id = parent.id.replace('ctrl-','');
-              const card = parent.closest('.menu-card');
-              const nameEl = card ? card.querySelector('.menu-card__name') : null;
-              const priceEl = card ? card.querySelector('.menu-card__price') : null;
-              const name = nameEl ? nameEl.textContent.trim() : '';
-              const price = priceEl ? priceEl.textContent.replace('₹','').trim() : '0';
-              parent.innerHTML = '<button class="item-add-btn" title="Add">+</button>';
-              parent.querySelector('button').onclick = () => addToCart(parseInt(id), name, parseFloat(price));
-            }
-          });
-        } else {
-          alert('Error: ' + data.error);
-          btn.textContent = 'Place Order';
-          btn.disabled = false;
-        }
-      })
-      .catch(err => {
-        alert('Connection error. Please try again.');
-        btn.textContent = 'Place Order';
-        btn.disabled = false;
-      });
-    }
-
-    function getCookie(name) {
-      let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-      return v ? v[2] : null;
-    }
-  </script>
+    });
+  });
+</script>
 </body>
 </html>
