@@ -3,7 +3,7 @@
    Warm, restaurant-grade design system
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 /* ── CSS Variables ─────────────────────────────────────────── */
 :root {
@@ -25,7 +25,7 @@
     --radius-lg: 20px;
     --radius-xl: 28px;
     --font-display: 'Playfair Display', Georgia, serif;
-    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-body: 'Poppins', sans-serif;
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -334,7 +334,7 @@ p {
 }
 
 .stat-card__value {
-    font-family: var(--font-display);
+    font-family: var(--font-body);
     font-size: 2rem;
     font-weight: 700;
     color: var(--brand);
@@ -723,7 +723,7 @@ tbody tr:hover {
 }
 
 .menu-item-card__price {
-    font-family: var(--font-display);
+    font-family: var(--font-body);
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--brand);

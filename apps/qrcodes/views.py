@@ -9,6 +9,7 @@ from django.db.models import Sum
 from PIL import Image, ImageDraw, ImageFont
 from .models import QRCode
 from .forms import QRCodeForm
+from apps.menus.models import RestaurantSubscription
 
 
 def _restaurant(user):
@@ -357,28 +358,102 @@ def qr_list(request):
 @login_required
 def qr_create(request):
     restaurant = _restaurant(request.user)
+
     if not restaurant:
-        messages.warning(request, "Please set up your restaurant before adding QR codes.")
+        messages.warning(
+            request,
+            "Please set up your restaurant before adding QR codes."
+        )
         return redirect("restaurant_edit")
 
+    # =========================================
+    # CHECK SUBSCRIPTION
+    # =========================================
+
+    try:
+        subscription = RestaurantSubscription.objects.get(
+            restaurant=restaurant,
+            is_active=True
+        )
+
+    except RestaurantSubscription.DoesNotExist:
+        messages.error(
+            request,
+            "No active subscription found. Please choose a plan."
+        )
+        return redirect("subscription_plans")
+
+    # Check if subscription expired
+    if subscription.is_expired():
+        messages.error(
+            request,
+            "Your subscription has expired."
+        )
+        return redirect("subscription_plans")
+
+    # Current QR count
+    current_qr_count = QRCode.objects.filter(
+        restaurant=restaurant
+    ).count()
+
+    # QR limit validation
+    if current_qr_count >= subscription.plan.qr_limit:
+        messages.error(
+            request,
+            f"Your {subscription.plan.name} plan "
+            f"allows only {subscription.plan.qr_limit} QR codes."
+        )
+        return redirect("qr_list")
+
+    # =========================================
+    # CREATE QR
+    # =========================================
+
     if request.method == "POST":
+
         label = request.POST.get("label", "").strip()
+
         if not label:
             messages.error(request, "Please enter a label.")
-            return render(request, "qrcodes/qr_form.html", {"label_value": ""})
+            return render(
+                request,
+                "qrcodes/qr_form.html",
+                {"label_value": ""}
+            )
 
-        base_slug = slugify(label) or \
-                    f"qr-{QRCode.objects.filter(restaurant=restaurant).count() + 1}"
-        slug, counter = base_slug, 1
-        while QRCode.objects.filter(restaurant=restaurant, slug=slug).exists():
+        base_slug = slugify(label) or (
+            f"qr-{QRCode.objects.filter(restaurant=restaurant).count() + 1}"
+        )
+
+        slug = base_slug
+        counter = 1
+
+        while QRCode.objects.filter(
+            restaurant=restaurant,
+            slug=slug
+        ).exists():
+
             slug = f"{base_slug}-{counter}"
             counter += 1
 
-        qr = QRCode.objects.create(restaurant=restaurant, label=label, slug=slug)
-        messages.success(request, f'QR code created for "{qr.label}"!')
+        qr = QRCode.objects.create(
+            restaurant=restaurant,
+            label=label,
+            slug=slug
+        )
+
+        messages.success(
+            request,
+            f'QR code created for "{qr.label}"!'
+        )
+
         return redirect("qr_list")
 
-    return render(request, "qrcodes/qr_form.html", {"label_value": ""})
+    return render(
+        request,
+        "qrcodes/qr_form.html",
+        {"label_value": ""}
+    )
 
 
 @login_required

@@ -3,18 +3,45 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Restaurant
 from .forms import RestaurantForm
+from apps.menus.models import RestaurantSubscription
+from apps.qrcodes.models import QRCode
 
 
 @login_required
 def dashboard(request):
+
     try:
         restaurant = request.user.restaurant
     except Restaurant.DoesNotExist:
         restaurant = None
-    return render(request, 'restaurants/dashboard.html', {
-        'restaurant': restaurant
-    })
 
+    subscription = None
+    total_qrs = 0
+    remaining_qrs = 0
+
+    if restaurant:
+
+        # Active subscription
+        subscription = RestaurantSubscription.objects.filter(
+            restaurant=restaurant,
+            is_active=True
+        ).first()
+
+        # Total QR count
+        total_qrs = QRCode.objects.filter(
+            restaurant=restaurant
+        ).count()
+
+        # Remaining QR count
+        if subscription:
+            remaining_qrs = subscription.plan.qr_limit - total_qrs
+
+    return render(request, 'restaurants/dashboard.html', {
+        'restaurant': restaurant,
+        'subscription': subscription,
+        'total_qrs': total_qrs,
+        'remaining_qrs': remaining_qrs,
+    })
 
 @login_required
 def restaurant_edit(request):

@@ -12,6 +12,8 @@ urlpatterns = [
     path('qr/',         include('apps.qrcodes.urls')),
     path('orders/',     include('apps.orders.urls')),
     path('m/',          include('apps.menus.public_urls')),
+    path("",            include("apps.menus.urls")),
+    
 ]
 
 if settings.DEBUG:

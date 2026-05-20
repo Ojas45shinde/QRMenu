@@ -38,6 +38,160 @@
     </div>
   </div>
 
+
+  {% if subscription %}
+  <div class="card" style="margin-bottom:22px;">
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        flex-wrap:wrap;
+        gap:40px;
+    ">
+
+      <div>
+        <h2 style="
+          margin:0 0 14px 0;
+          font-size:20px;
+          font-weight:500;
+          text-align:center;
+        ">
+          Subscription Plan
+        </h2>
+
+        <div style="
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            background:
+                {% if subscription.is_expired %}
+                    #FFE5E5
+                {% else %}
+                    #E8FFF1
+                {% endif %};
+            color:
+                {% if subscription.is_expired %}
+                    #D11A2A
+                {% else %}
+                    #0F9D58
+                {% endif %};
+            font-weight:700;
+            font-size:14px;
+        ">
+          {% if subscription.is_expired %}
+          EXPIRED
+          {% else %}
+          ACTIVE
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+            gap:16px;
+            flex:1;
+        ">
+
+        <div style="
+                background:#F8FAFC;
+                padding:16px;
+                border-radius:14px;
+                text-align:center;
+            ">
+          <div style="font-size:13px;color:#64748B;">
+            Current Plan
+          </div>
+
+          <div style="
+                    margin-top:6px;
+                    font-size:20px;
+                    font-weight:700;
+                ">
+            {{ subscription.plan.name }}
+          </div>
+        </div>
+
+        <div style="
+                background:#F8FAFC;
+                padding:16px;
+                border-radius:14px;
+                text-align:center;
+            ">
+          <div style="font-size:13px;color:#64748B;">
+            QR Limit
+          </div>
+
+          <div style="
+                    margin-top:6px;
+                    font-size:20px;
+                    font-weight:700;
+                ">
+            {{ subscription.plan.qr_limit }}
+          </div>
+        </div>
+
+        <div style="
+                background:#F8FAFC;
+                padding:16px;
+                border-radius:14px;
+                text-align:center;
+            ">
+          <div style="font-size:13px;color:#64748B;">
+            Expires On
+          </div>
+
+          <div style="
+                    margin-top:6px;
+                    font-size:18px;
+                    font-weight:700;
+                ">
+            {{ subscription.end_date|date:"d M Y" }}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    {% if subscription.is_expired %}
+    <div style="
+        margin-top:20px;
+        padding:14px 18px;
+        border-radius:12px;
+        background:#FFF4E5;
+        color:#B45309;
+        font-weight:600;
+    ">
+      Your subscription has expired. Please renew your plan.
+    </div>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="card" style="margin-bottom:24px;">
+    <h2 style="
+        margin-top:0;
+        margin-bottom:12px;
+        font-size:22px;
+    ">
+      No Active Subscription
+    </h2>
+
+    <p style="
+        color:#64748B;
+        margin-bottom:18px;
+    ">
+      Choose a subscription plan to start generating QR codes.
+    </p>
+
+    <a href="{% url 'subscription_plans' %}" class="btn btn--primary">
+      View Plans
+    </a>
+  </div>
+  {% endif %}
+
+
   <div class="action-grid">
     <a href="{% url 'category_list' %}" class="action-card">
       <div class="action-card__icon">🍽</div>

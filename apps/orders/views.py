@@ -7,6 +7,8 @@ from apps.restaurants.models import Restaurant
 from apps.menus.models import MenuCategory, MenuItem
 from apps.qrcodes.models import QRCode
 from .models import Order, OrderItem
+from django.db.models import Prefetch
+from apps.menus.models import RestaurantSubscription
 
 
 def place_order(request, restaurant_slug, qr_slug):
@@ -25,8 +27,13 @@ def place_order(request, restaurant_slug, qr_slug):
         )
 
     categories = MenuCategory.objects.filter(
-        restaurant=restaurant
-    ).prefetch_related("items")
+    restaurant=restaurant
+).prefetch_related(
+    Prefetch(
+        'items',
+        queryset=MenuItem.objects.order_by('price')
+    )
+)
 
     if request.method == "POST":
         # Support both JSON and form POST

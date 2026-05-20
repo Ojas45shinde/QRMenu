@@ -5,6 +5,8 @@ from django.utils import timezone
 from apps.restaurants.models import Restaurant
 from apps.menus.models import MenuCategory
 from apps.qrcodes.models import QRCode
+from django.db.models import Prefetch
+from .models import MenuItem
 
 
 def public_menu(request, restaurant_slug, qr_slug=None):
@@ -39,7 +41,7 @@ def public_menu(request, restaurant_slug, qr_slug=None):
 
     categories = MenuCategory.objects.filter(
         restaurant=restaurant
-    ).prefetch_related("items")
+    ).prefetch_related(Prefetch("items",queryset=MenuItem.objects.order_by("price")))
 
     return render(request, "menus/public_menu.html", {
         "restaurant": restaurant,

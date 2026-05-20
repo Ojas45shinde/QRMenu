@@ -19,4 +19,7 @@ urlpatterns = [
          views.item_edit,   name="item_edit"),
     path("items/<int:pk>/delete/",
          views.item_delete, name="item_delete"),
+     path("subscriptions/",views.subscription_plans,name="subscription_plans"),
+
+     path("choose-plan/<int:plan_id>/",views.choose_plan,name="choose_plan"),
 ]
