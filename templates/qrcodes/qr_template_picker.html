@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+  rel="stylesheet">
 {% block title %}Download QR — {{ qr.label }}{% endblock %}
 {% block content %}
-<div class="page">
+<div class="page" style="font-family:'Poppins',sans-serif;">
 
   <div class="breadcrumb">
     <a href="{% url 'dashboard' %}">Dashboard</a>
@@ -27,33 +29,41 @@
   </div>
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;">
-  {% for tpl in templates %}
+    {% for tpl in templates %}
 
     <div style="border-radius:16px;overflow:hidden;
                 box-shadow:0 4px 20px rgba(0,0,0,0.12);
                 transition:all 0.25s;cursor:pointer;"
-         onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 16px 48px rgba(0,0,0,0.2)'"
-         onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.12)'">
+      onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 16px 48px rgba(0,0,0,0.2)'"
+      onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.12)'">
 
       <!-- Top banner preview -->
       <div style="background:{{ tpl.top }};padding:1.25rem 1rem;
                   text-align:center;position:relative;overflow:hidden;">
         <!-- Deco circles (Fresh White only) -->
         {% if tpl.key == 'white' %}
-          <div style="position:absolute;top:-30px;left:-30px;width:80px;height:80px;
+        <div style="position:absolute;top:-30px;left:-30px;width:80px;height:80px;
                       border-radius:50%;border:3px solid #FF8A95;opacity:0.5;"></div>
-          <div style="position:absolute;top:-30px;right:-30px;width:80px;height:80px;
+        <div style="position:absolute;top:-30px;right:-30px;width:80px;height:80px;
                       border-radius:50%;border:3px solid #FF8A95;opacity:0.5;"></div>
         {% endif %}
 
-        <div style="font-size:0.78rem;font-weight:700;
-                    color:{{ tpl.text }};letter-spacing:0.12em;
-                    margin-bottom:0.3rem;position:relative;">
+        <div style="font-size:1.15rem;
+                  font-weight:800;
+                  color:{{ tpl.text }};
+                  letter-spacing:0.08em;
+                  margin-bottom:0.45rem;
+                  position:relative;
+                  text-transform:uppercase;">
           SCAN HERE
         </div>
-        <div style="font-size:1rem;font-weight:800;
-                    color:{{ tpl.text }};letter-spacing:0.05em;
-                    position:relative;">
+        <div style="font-size:2rem;
+                    font-weight:900;
+                    color:{{ tpl.text }};
+                    letter-spacing:0.03em;
+                    line-height:1.1;
+                    position:relative;
+                    text-transform:uppercase;">
           {{ qr.restaurant.name|upper|truncatechars:20 }}
         </div>
       </div>
@@ -67,38 +77,54 @@
       <div style="background:{{ tpl.body }};padding:1rem;text-align:center;">
 
         {% if tpl.key != 'yellow' %}
-          <div style="font-size:0.72rem;letter-spacing:0.08em;
-                      color:{% if tpl.key == 'white' %}#666{% else %}#BBB{% endif %};
-                      margin-bottom:0.2rem;">FOR OUR</div>
-          <div style="font-size:1.5rem;font-weight:900;
-                      color:{{ tpl.accent }};margin-bottom:0.6rem;">MENU</div>
+        <div style="font-size:0.72rem;letter-spacing:0.08em;
+                    color:{% if tpl.key == 'white' %}#666{% else %}#BBB{% endif %};
+                    margin-bottom:0.2rem;">FOR OUR</div>
+        <div style="font-size:3rem;
+                    font-weight:900;
+                    color:{{ tpl.accent }};
+                    margin-bottom:0.8rem;
+                    letter-spacing:0.03em;
+                    line-height:1;">
+          MENU
+        </div>
         {% else %}
-          <div style="font-size:0.72rem;color:#888;margin-bottom:0.2rem;">VIEW OUR</div>
-          <div style="font-size:1.5rem;font-weight:900;
-                      color:{{ tpl.accent }};margin-bottom:0.6rem;">MENU</div>
+        <div style="font-size:0.72rem;color:#888;margin-bottom:0.2rem;">VIEW OUR</div>
+        <div style="font-size:3rem;
+                  font-weight:900;
+                  color:{{ tpl.accent }};
+                  margin-bottom:0.8rem;
+                  letter-spacing:0.03em;
+                  line-height:1;">
+          MENU
+        </div>
         {% endif %}
 
         <!-- QR placeholder with name badge -->
         <div style="width:100px;height:100px;background:#fff;
-                    border-radius:10px;margin:0 auto;position:relative;
+                    border-radius:18px;margin:0 auto;position:relative;
                     display:flex;align-items:center;justify-content:center;
                     {% if tpl.key == 'black' %}
                       border:3px solid #D4AF37;
                     {% elif tpl.key == 'yellow' %}
                       outline:4px solid #FFB800;
                     {% else %}
-                      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+                      box-shadow:0 10px 30px rgba(0,0,0,0.18);
                     {% endif %}">
           <!-- Fake QR dots -->
           <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:2px;padding:6px;width:100%;height:100%;">
             {% for i in "123456789012345678901234567890123456" %}
-              <div style="border-radius:1px;background:{% cycle '#000' '#fff' '#000' '#000' '#fff' '#000' '#fff' '#000' '#000' '#fff' '#000' '#fff' %};"></div>
+            <div
+              style="border-radius:1px;background:{% cycle '#000' '#fff' '#000' '#000' '#fff' '#000' '#fff' '#000' '#000' '#fff' '#000' '#fff' %};">
+            </div>
             {% endfor %}
           </div>
           <!-- Name badge in center -->
           <div style="position:absolute;background:{{ tpl.accent }};
                       color:{{ tpl.text }};padding:0.1rem 0.4rem;
-                      border-radius:100px;font-size:0.5rem;font-weight:700;
+                      border-radius:100px;font-size:0.48rem;
+                      font-weight:800;
+                      letter-spacing:0.03em;
                       white-space:nowrap;max-width:80px;overflow:hidden;
                       text-overflow:ellipsis;">
             {{ qr.restaurant.name|truncatechars:10 }}
@@ -109,7 +135,9 @@
         <div style="display:inline-block;margin-top:0.75rem;
                     background:{{ tpl.accent }};color:{{ tpl.text }};
                     padding:0.3rem 1rem;border-radius:100px;
-                    font-size:0.75rem;font-weight:700;
+                    font-size:1rem;
+                    font-weight:800;
+                    letter-spacing:0.04em;
                     {% if tpl.key == 'black' %}
                       background:transparent;border:2px solid #D4AF37;color:#D4AF37;
                     {% endif %}">
@@ -119,16 +147,16 @@
       </div>
 
       <!-- Download button -->
-      <a href="{% url 'qr_download_template' qr.pk tpl.key %}"
-         style="display:block;background:{{ tpl.accent }};color:{{ tpl.text }};
+      <a href="{% url 'qr_download_template' qr.pk tpl.key %}" style="display:block;background:{{ tpl.accent }};color:{{ tpl.text }};
                 padding:0.85rem;text-align:center;font-weight:700;
-                font-size:0.9rem;text-decoration:none;
+                font-size:1rem;
+                letter-spacing:0.03em;text-decoration:none;
                 border-top:1px solid rgba(0,0,0,0.08);">
         ⬇ Download {{ tpl.name }}
       </a>
 
     </div>
-  {% endfor %}
+    {% endfor %}
   </div>
 
   <!-- Tips -->
