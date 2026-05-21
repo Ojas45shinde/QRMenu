@@ -10,7 +10,16 @@ from PIL import Image, ImageDraw, ImageFont
 from .models import QRCode
 from .forms import QRCodeForm
 from apps.menus.models import RestaurantSubscription
+from PIL import ImageFont
+from django.conf import settings
+import os
 
+
+FONT_DIR = os.path.join(settings.BASE_DIR, "static", "fonts")
+
+FONT_BOLD = os.path.join(FONT_DIR, "Poppins-Bold.ttf")
+FONT_EXTRA = os.path.join(FONT_DIR, "Poppins-ExtraBold.ttf")
+FONT_SEMI = os.path.join(FONT_DIR, "Poppins-SemiBold.ttf")
 
 def _restaurant(user):
     try:
@@ -67,15 +76,9 @@ def _embed_name_in_qr(qr_img, text, bg="#E63946", fg="#FFFFFF"):
     short = text[:15]
     font_size = badge_h - 14
     try:
-        font = ImageFont.truetype("arialbd.ttf", font_size)
+        font = ImageFont.truetype(FONT_BOLD, font_size)
     except:
-        try:
-            font = ImageFont.truetype(
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                font_size
-            )
-        except:
-            font = ImageFont.load_default()
+        font = ImageFont.load_default()
 
     bbox = d.textbbox((0, 0), short, font=font)
     tw   = bbox[2] - bbox[0]
@@ -97,17 +100,17 @@ def _tpl_fresh_white(qr_img, restaurant_name, table_label):
     draw = ImageDraw.Draw(img)
 
     try:
-        font_scan   = ImageFont.truetype("arialbd.ttf",  52)
-        font_name   = ImageFont.truetype("arialbd.ttf",  70)
-        font_for    = ImageFont.truetype("arialbd.ttf",  46)
-        font_menu   = ImageFont.truetype("arialbd.ttf",  90)
-        font_table  = ImageFont.truetype("arialbd.ttf",  28)
-        font_footer = ImageFont.truetype("arial.ttf",    22)
-        font_power  = ImageFont.truetype("arialbd.ttf",  22)
+        font_scan   = ImageFont.truetype(FONT_EXTRA, 58)
+        font_name   = ImageFont.truetype(FONT_EXTRA, 82)
+        font_for    = ImageFont.truetype(FONT_SEMI, 40)
+        font_menu   = ImageFont.truetype(FONT_EXTRA, 110)
+        font_table  = ImageFont.truetype(FONT_BOLD, 34)
+        font_footer = ImageFont.truetype(FONT_SEMI, 24)
+        font_power  = ImageFont.truetype(FONT_BOLD, 24)
+
     except:
         font_scan = font_name = font_for = font_menu = \
         font_table = font_footer = font_power = ImageFont.load_default()
-
     # Top banner
     draw.rectangle([0, 0, W, 240], fill="#E63946")
 
@@ -186,11 +189,11 @@ def _tpl_luxury_black(qr_img, restaurant_name, table_label):
     gold = "#D4AF37"
 
     try:
-        font_top    = ImageFont.truetype("arial.ttf",   28)
-        font_name   = ImageFont.truetype("arialbd.ttf", 64)
-        font_scan   = ImageFont.truetype("arialbd.ttf", 34)
-        font_table  = ImageFont.truetype("arialbd.ttf", 32)
-        font_footer = ImageFont.truetype("arial.ttf",   24)
+        font_top    = ImageFont.truetype(FONT_SEMI, 30)
+        font_name   = ImageFont.truetype(FONT_EXTRA, 74)
+        font_scan   = ImageFont.truetype(FONT_BOLD, 38)
+        font_table  = ImageFont.truetype(FONT_BOLD, 34)
+        font_footer = ImageFont.truetype(FONT_SEMI, 24)
     except:
         font_top = font_name = font_scan = \
         font_table = font_footer = ImageFont.load_default()
@@ -271,12 +274,13 @@ def _tpl_modern_yellow(qr_img, restaurant_name, table_label):
     draw.rectangle([0, H - 45, W, H], fill=yellow)
 
     try:
-        font_small  = ImageFont.truetype("arial.ttf",   28)
-        font_big    = ImageFont.truetype("arialbd.ttf", 76)
-        font_name   = ImageFont.truetype("arialbd.ttf", 42)
-        font_scan   = ImageFont.truetype("arialbd.ttf", 36)
-        font_table  = ImageFont.truetype("arialbd.ttf", 30)
-        font_footer = ImageFont.truetype("arial.ttf",   24)
+        font_small  = ImageFont.truetype(FONT_SEMI, 30)
+        font_big    = ImageFont.truetype(FONT_EXTRA, 92)
+        font_name   = ImageFont.truetype(FONT_EXTRA, 48)
+        font_scan   = ImageFont.truetype(FONT_BOLD, 42)
+        font_table  = ImageFont.truetype(FONT_BOLD, 34)
+        font_footer = ImageFont.truetype(FONT_SEMI, 24)
+
     except:
         font_small = font_big = font_name = font_scan = \
         font_table = font_footer = ImageFont.load_default()
