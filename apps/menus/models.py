@@ -77,13 +77,16 @@ class RestaurantSubscription(models.Model):
     restaurant = models.OneToOneField(
         Restaurant,
         on_delete=models.CASCADE,
-        related_name="subscription"
+        related_name="subscription",
+        null=True,
+        blank=True
     )
 
     plan = models.ForeignKey(
         SubscriptionPlan,
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank=True
     )
 
     start_date = models.DateTimeField(
@@ -91,18 +94,13 @@ class RestaurantSubscription(models.Model):
     )
 
     end_date = models.DateTimeField(
-    blank=True,
-    null=True
+        blank=True,
+        null=True
     )
 
     is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def is_expired(self):
-        from django.utils import timezone
-        return timezone.now().date() > self.end_date
-    
 
     def save(self, *args, **kwargs):
 
@@ -116,10 +114,24 @@ class RestaurantSubscription(models.Model):
         super().save(*args, **kwargs)
 
     def is_expired(self):
+
+        if not self.end_date:
+            return False
+
         return timezone.now() > self.end_date
 
     def __str__(self):
-        return (
-            f"{self.restaurant.name} - "
-            f"{self.plan.name}"
+
+        restaurant_name = (
+            self.restaurant.name
+            if self.restaurant
+            else "No Restaurant"
         )
+
+        plan_name = (
+            self.plan.name
+            if self.plan
+            else "No Plan"
+        )
+
+        return f"{restaurant_name} - {plan_name}"
