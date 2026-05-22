@@ -9,8 +9,9 @@ from apps.qrcodes.models import QRCode
 from .models import Order, OrderItem
 from django.db.models import Prefetch
 from apps.menus.models import RestaurantSubscription
+from django_ratelimit.decorators import ratelimit
 
-
+@ratelimit(key='ip',rate="10/m",method='POST',block=True)
 def place_order(request, restaurant_slug, qr_slug):
     restaurant = get_object_or_404(
         Restaurant, slug=restaurant_slug, is_active=True
@@ -46,8 +47,8 @@ def place_order(request, restaurant_slug, qr_slug):
             return JsonResponse({"error": "Invalid request."}, status=400)
 
         items_data    = data.get("items", [])
-        customer_name = data.get("customer_name", "").strip()
-        notes         = data.get("notes", "").strip()
+        customer_name = data.get("customer_name", "")[:100].strip()
+        notes         = data.get("notes", "")[:500].strip()
 
         if not items_data:
             return JsonResponse({"error": "No items selected."}, status=400)

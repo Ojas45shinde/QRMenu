@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/',      admin.site.urls),
+    path('manage-qrmenu-secret/',      admin.site.urls),
     path('',            include('apps.core.urls')),
     path('auth/',       include('django.contrib.auth.urls')),
     path('dashboard/',  include('apps.restaurants.urls')),

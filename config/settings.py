@@ -83,8 +83,8 @@ else:
     }}
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+     'OPTIONS':{'min_length':10}},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
@@ -111,6 +111,18 @@ if not DEBUG:
     X_FRAME_OPTIONS             = "DENY"
     SESSION_COOKIE_SECURE       = True
     CSRF_COOKIE_SECURE          = True
+    SECURE_SSL_REDIRECT         = True
+    SECURE_HSTS_SECONDS         = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS =True
+
+LOGGING={
+    'version':1,
+    'handlers':{'console':{'class':'logging.StreamHandler'}},
+    'loggers':{
+        'django.security':{'handlers':['console'],'level':'WARNING'},
+        'django.request':{'handlers':['console'],'level':'ERROR'},
+    }
+    }    
 
 LANGUAGE_CODE      = "en-us"
 TIME_ZONE          = "Asia/Kolkata"
