@@ -12,7 +12,7 @@ if env_file.exists():
 
 SECRET_KEY    = env("SECRET_KEY", default="local-dev-key-change-in-production")
 DEBUG         = env("DEBUG", default=False)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     "apps.menus",
     "apps.qrcodes",
     "apps.orders",
+    "cloudinary_storage",
+    "cloudinary",
 ]
 
 MIDDLEWARE = [
@@ -128,3 +130,10 @@ LANGUAGE_CODE      = "en-us"
 TIME_ZONE          = "Asia/Kolkata"
 USE_I18N = USE_TZ  = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": env("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": env("CLOUDINARY_API_KEY"),
+    "API_SECRET": env("CLOUDINARY_API_SECRET"),
+}
