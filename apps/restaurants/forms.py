@@ -1,5 +1,6 @@
 from django import forms
 from .models import Restaurant
+from django.core.files.uploadedfile import UploadedFile
 
 
 class RestaurantForm(forms.ModelForm):
@@ -21,11 +22,11 @@ class RestaurantForm(forms.ModelForm):
             'use_custom_menu':  'If checked, customers will see your uploaded HTML instead of the auto-generated menu.',
         }
 
-    def clean_custom_menu_html(self):
-        f = self.cleaned_data.get('custom_menu_html')
-        if f and hasattr(f, 'name'):
-            if not f.name.endswith('.html'):
-                raise forms.ValidationError('Only .html files are allowed.')
-            if f.size > 2 * 1024 * 1024:
-                raise forms.ValidationError('File must be under 2MB.')
-        return f
+def clean_custom_menu_html(self):
+    f = self.cleaned_data.get('custom_menu_html')
+    if isinstance(f, UploadedFile):          # only check NEW uploads, not existing FieldFile
+        if not f.name.endswith('.html'):
+            raise forms.ValidationError('Only .html files are allowed.')
+        if f.size > 2 * 1024 * 1024:
+            raise forms.ValidationError('File must be under 2MB.')
+    return f

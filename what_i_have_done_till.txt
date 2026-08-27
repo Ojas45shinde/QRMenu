@@ -1,0 +1,9 @@
+changed render's DB to Neon's DB (postgreSQL) -> changed and added Env variables in render too
+changed renders image storage to cloudinary storage -> added api keys and other things as Env variables in render
+pushed code to github
+deployed on render
+
+Add this:
+terms of use : in the main page (i which it says that we use your location of restuarant, name, email id, contacts ,etc )
+
+in qr_template_picker.html i cant see the download button on the card , help me to do it, give me steps for the changes ill do it.

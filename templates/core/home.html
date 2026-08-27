@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Menu — Digital Menus for Restaurants & Cafes</title>
+    <link rel="icon" type="image/svg" href="{% static 'images/favicon (1).svg' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -365,7 +366,7 @@
             width: 48px;
             height: 48px;
             border-radius: 12px;
-            background: rgba(230, 57, 70, 0.15);
+            background: rgb(255, 255, 255);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -621,7 +622,7 @@
         }
 
         .tpl-light {
-            background: linear-gradient(145deg, #FFFDF7 0%, #FFF0E8 100%);
+            background: linear-gradient(145deg, #f8efd3 0%, #f4d4c3 100%);
             padding: 2.5rem 2rem;
             text-align: center;
 
@@ -984,7 +985,9 @@
 
     <!-- NAV -->
     <nav class="top-nav">
-        <a href="/" class="nav-brand">🍽 QR <span>Menu</span></a>
+        <a href="/" class="nav-brand">🍽
+            QR <span>Menu</span>
+        </a>
         <a href="{% url 'login' %}" class="nav-cta">Login →</a>
     </nav>
 
@@ -1069,7 +1072,7 @@
         <div class="section-inner">
             <div class="section-tag">Why QR Menu</div>
             <h2 class="section-title">Everything a restaurant <em>actually needs</em></h2>
-            <p class="section-sub">Built specifically for Indian restaurants and cafes. No bloat, low monthly fees for
+            <p class="section-sub">Built specifically for Indian restaurants and cafes. low monthly fees for
                 basic features.</p>
             <div class="features-grid">
                 <div class="feature-card">
@@ -1128,9 +1131,9 @@
                             <div>
                                 <div class="tpl-dark__tag">Welcome to</div>
                                 <div class="tpl-dark__title">Restaurant Name</div>
-                                <div class="tpl-dark__sub">Fine dining experience</div>
+                                <div class="tpl-dark__sub">Fine dining experience</div><br />
                             </div>
-                            <div class="tpl-dark__divider"></div>
+
                             <div>
                                 <div class="tpl-dark__scan-label">Scan to view our menu</div>
                                 <div class="tpl-qr-box">QR Code<br>here</div>
@@ -1149,9 +1152,9 @@
                             <div>
                                 <div class="tpl-light__icon">🍽</div>
                                 <div class="tpl-light__name">Restaurant Name</div>
-                                <div class="tpl-light__tagline">Good food. Good vibes.</div>
+                                <div class="tpl-light__tagline">Good food. Good vibes.</div><br />
                             </div>
-                            <div class="tpl-light__scan">📷 Scan to view menu</div>
+                            <div class="tpl-light__scan">Scan to view menu</div>
                             <div class="tpl-qr-box">QR Code<br>here</div>
                             <div class="tpl-light__footer">No app download needed</div>
                         </div>
@@ -1166,7 +1169,9 @@
                         <div class="tpl-bold">
                             <div>
                                 <div class="tpl-bold__title">VIEW<br>OUR<br>MENU</div>
-                                <div class="tpl-bold__sub">Restaurant Name</div>
+                                <div class="tpl-bold__sub">
+                                    <h3>Restaurant Name</h3>
+                                </div><br />
                             </div>
                             <div>
                                 <div class="tpl-bold__label">↓ Scan here ↓</div>
