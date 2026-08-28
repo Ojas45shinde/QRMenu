@@ -89,6 +89,8 @@ class RestaurantSubscriptionAdmin(admin.ModelAdmin):
     list_display = [
         "restaurant",
         "plan",
+        "requested_plan",
+        "payment_status",
         "start_date",
         "end_date",
         "is_active",
@@ -96,9 +98,31 @@ class RestaurantSubscriptionAdmin(admin.ModelAdmin):
 
     list_filter = [
         "is_active",
+        "payment_status",
         "plan",
     ]
 
     search_fields = [
         "restaurant__name",
     ]
+
+    actions = ["activate_subscriptions"]
+
+    @admin.action(description="✓ Mark payment verified & activate selected subscriptions")
+    def activate_subscriptions(self, request, queryset):
+        activated = 0
+        skipped = 0
+        for subscription in queryset:
+            if subscription.requested_plan or subscription.plan:
+                subscription.activate()
+                activated += 1
+            else:
+                skipped += 1
+        if activated:
+            self.message_user(request, f"Activated {activated} subscription(s).")
+        if skipped:
+            self.message_user(
+                request,
+                f"Skipped {skipped} subscription(s) with no plan set.",
+                level="warning",
+            )

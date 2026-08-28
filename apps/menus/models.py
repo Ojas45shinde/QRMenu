@@ -74,6 +74,12 @@ class SubscriptionPlan(models.Model):
 
 class RestaurantSubscription(models.Model):
 
+    PAYMENT_STATUS_CHOICES = [
+        ("pending_verification", "Pending Verification"),
+        ("active",                "Active"),
+        ("rejected",              "Rejected"),
+    ]
+
     restaurant = models.OneToOneField(
         Restaurant,
         on_delete=models.CASCADE,
@@ -89,6 +95,23 @@ class RestaurantSubscription(models.Model):
         blank=True
     )
 
+    # Requested plan while a payment is awaiting manual verification by an
+    # admin. Kept separate from `plan` so the currently *active* plan isn't
+    # overwritten/lost while a new request is pending review.
+    requested_plan = models.ForeignKey(
+        SubscriptionPlan,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    payment_status = models.CharField(
+        max_length=25,
+        choices=PAYMENT_STATUS_CHOICES,
+        default="pending_verification",
+    )
+
     start_date = models.DateTimeField(
         default=timezone.now
     )
@@ -98,19 +121,32 @@ class RestaurantSubscription(models.Model):
         null=True
     )
 
-    is_active = models.BooleanField(default=True)
+    # No longer defaults to True — a subscription only becomes active once
+    # an admin verifies payment and explicitly activates it (see
+    # RestaurantSubscriptionAdmin.activate_subscriptions).
+    is_active = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def activate(self):
+        """Called only from the admin action once payment is verified."""
+        if self.requested_plan:
+            self.plan = self.requested_plan
+            self.requested_plan = None
+        self.payment_status = "active"
+        self.is_active = True
+        self.start_date = timezone.now()
+        self.end_date = (
+            timezone.now() + timedelta(days=self.plan.duration_days)
+            if self.plan else None
+        )
+        self.save()
+
     def save(self, *args, **kwargs):
-
-        # Automatically set expiry date
-        if not self.end_date and self.plan:
-            self.end_date = (
-                timezone.now() +
-                timedelta(days=self.plan.duration_days)
-            )
-
+        # NOTE: end_date is intentionally NOT auto-set here anymore. Setting
+        # it at request time (before payment is verified) would silently
+        # start burning the paid period while the request is still pending.
+        # It's set explicitly by `activate()` once verified instead.
         super().save(*args, **kwargs)
 
     def is_expired(self):

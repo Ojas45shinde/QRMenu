@@ -742,7 +742,7 @@
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const data = await resp.json();
         if (data.success) {
-          window.location.href = '/orders/confirm/' + data.order_id + '/';
+          window.location.href = '/orders/confirm/' + data.access_token + '/';
         } else {
           alert(data.error || 'Something went wrong. Please try again.');
           btn.textContent = '✓ Place Order';

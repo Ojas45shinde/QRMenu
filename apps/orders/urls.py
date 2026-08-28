@@ -4,7 +4,7 @@ from . import views, waiter_views
 urlpatterns = [
     path("place/<slug:restaurant_slug>/<slug:qr_slug>/",
          views.place_order,            name="place_order"),
-    path("confirm/<int:order_id>/",
+    path("confirm/<uuid:access_token>/",
          views.order_confirm,          name="order_confirm"),
     path("kitchen/",
          waiter_views.kitchen_screen,  name="kitchen_screen"),

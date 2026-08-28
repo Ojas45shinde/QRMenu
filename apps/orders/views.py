@@ -81,9 +81,10 @@ def place_order(request, restaurant_slug, qr_slug):
         order.calculate_total()
         
         return JsonResponse({
-            "success":  True,
-            "order_id": order.pk,
-            "total":    float(order.total_amount),
+            "success":      True,
+            "order_id":     order.pk,
+            "access_token": str(order.access_token),
+            "total":        float(order.total_amount),
         })
 
     return render(request, "orders/place_order.html", {
@@ -93,6 +94,6 @@ def place_order(request, restaurant_slug, qr_slug):
     })
 
 
-def order_confirm(request, order_id):
-    order = get_object_or_404(Order, pk=order_id)
+def order_confirm(request, access_token):
+    order = get_object_or_404(Order, access_token=access_token)
     return render(request, "orders/order_confirm.html", {"order": order})

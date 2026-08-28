@@ -1,0 +1,393 @@
+diff --git a/apps/menus/admin.py b/apps/menus/admin.py
+index d339539..0602121 100644
+--- a/apps/menus/admin.py
++++ b/apps/menus/admin.py
+@@ -89,6 +89,8 @@ class RestaurantSubscriptionAdmin(admin.ModelAdmin):
+     list_display = [
+         "restaurant",
+         "plan",
++        "requested_plan",
++        "payment_status",
+         "start_date",
+         "end_date",
+         "is_active",
+@@ -96,9 +98,31 @@ class RestaurantSubscriptionAdmin(admin.ModelAdmin):
+ 
+     list_filter = [
+         "is_active",
++        "payment_status",
+         "plan",
+     ]
+ 
+     search_fields = [
+         "restaurant__name",
+     ]
++
++    actions = ["activate_subscriptions"]
++
++    @admin.action(description="✓ Mark payment verified & activate selected subscriptions")
++    def activate_subscriptions(self, request, queryset):
++        activated = 0
++        skipped = 0
++        for subscription in queryset:
++            if subscription.requested_plan or subscription.plan:
++                subscription.activate()
++                activated += 1
++            else:
++                skipped += 1
++        if activated:
++            self.message_user(request, f"Activated {activated} subscription(s).")
++        if skipped:
++            self.message_user(
++                request,
++                f"Skipped {skipped} subscription(s) with no plan set.",
++                level="warning",
++            )
+diff --git a/apps/menus/migrations/0004_subscription_payment_status.py b/apps/menus/migrations/0004_subscription_payment_status.py
+new file mode 100644
+index 0000000..0a46a64
+--- /dev/null
++++ b/apps/menus/migrations/0004_subscription_payment_status.py
+@@ -0,0 +1,41 @@
++import django.db.models.deletion
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ("menus", "0003_alter_restaurantsubscription_end_date_and_more"),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name="restaurantsubscription",
++            name="requested_plan",
++            field=models.ForeignKey(
++                blank=True,
++                null=True,
++                on_delete=django.db.models.deletion.SET_NULL,
++                related_name="+",
++                to="menus.subscriptionplan",
++            ),
++        ),
++        migrations.AddField(
++            model_name="restaurantsubscription",
++            name="payment_status",
++            field=models.CharField(
++                choices=[
++                    ("pending_verification", "Pending Verification"),
++                    ("active", "Active"),
++                    ("rejected", "Rejected"),
++                ],
++                default="pending_verification",
++                max_length=25,
++            ),
++        ),
++        migrations.AlterField(
++            model_name="restaurantsubscription",
++            name="is_active",
++            field=models.BooleanField(default=False),
++        ),
++    ]
+diff --git a/apps/menus/models.py b/apps/menus/models.py
+index ef082e3..fc8dd7e 100644
+--- a/apps/menus/models.py
++++ b/apps/menus/models.py
+@@ -74,6 +74,12 @@ class SubscriptionPlan(models.Model):
+ 
+ class RestaurantSubscription(models.Model):
+ 
++    PAYMENT_STATUS_CHOICES = [
++        ("pending_verification", "Pending Verification"),
++        ("active",                "Active"),
++        ("rejected",              "Rejected"),
++    ]
++
+     restaurant = models.OneToOneField(
+         Restaurant,
+         on_delete=models.CASCADE,
+@@ -89,6 +95,23 @@ class RestaurantSubscription(models.Model):
+         blank=True
+     )
+ 
++    # Requested plan while a payment is awaiting manual verification by an
++    # admin. Kept separate from `plan` so the currently *active* plan isn't
++    # overwritten/lost while a new request is pending review.
++    requested_plan = models.ForeignKey(
++        SubscriptionPlan,
++        on_delete=models.SET_NULL,
++        null=True,
++        blank=True,
++        related_name="+",
++    )
++
++    payment_status = models.CharField(
++        max_length=25,
++        choices=PAYMENT_STATUS_CHOICES,
++        default="pending_verification",
++    )
++
+     start_date = models.DateTimeField(
+         default=timezone.now
+     )
+@@ -98,19 +121,32 @@ class RestaurantSubscription(models.Model):
+         null=True
+     )
+ 
+-    is_active = models.BooleanField(default=True)
++    # No longer defaults to True — a subscription only becomes active once
++    # an admin verifies payment and explicitly activates it (see
++    # RestaurantSubscriptionAdmin.activate_subscriptions).
++    is_active = models.BooleanField(default=False)
+ 
+     created_at = models.DateTimeField(auto_now_add=True)
+ 
+-    def save(self, *args, **kwargs):
+-
+-        # Automatically set expiry date
+-        if not self.end_date and self.plan:
+-            self.end_date = (
+-                timezone.now() +
+-                timedelta(days=self.plan.duration_days)
+-            )
++    def activate(self):
++        """Called only from the admin action once payment is verified."""
++        if self.requested_plan:
++            self.plan = self.requested_plan
++            self.requested_plan = None
++        self.payment_status = "active"
++        self.is_active = True
++        self.start_date = timezone.now()
++        self.end_date = (
++            timezone.now() + timedelta(days=self.plan.duration_days)
++            if self.plan else None
++        )
++        self.save()
+ 
++    def save(self, *args, **kwargs):
++        # NOTE: end_date is intentionally NOT auto-set here anymore. Setting
++        # it at request time (before payment is verified) would silently
++        # start burning the paid period while the request is still pending.
++        # It's set explicitly by `activate()` once verified instead.
+         super().save(*args, **kwargs)
+ 
+     def is_expired(self):
+diff --git a/apps/menus/views.py b/apps/menus/views.py
+index 0ff2c44..2da4271 100644
+--- a/apps/menus/views.py
++++ b/apps/menus/views.py
+@@ -3,8 +3,6 @@ from django.shortcuts import render, redirect, get_object_or_404
+ from django.contrib import messages
+ from .models import MenuCategory, MenuItem
+ from .forms import MenuCategoryForm, MenuItemForm
+-from datetime import timedelta
+-from django.utils import timezone
+ from apps.restaurants.models import Restaurant
+ from .models import SubscriptionPlan, RestaurantSubscription
+ 
+@@ -270,25 +268,25 @@ def choose_plan(request, plan_id):
+         id=plan_id
+     )
+ 
+-    RestaurantSubscription.objects.update_or_create(
+-
+-        restaurant=restaurant,
+-
+-        defaults={
+-
+-            "plan": plan,
+-
+-            "start_date": timezone.now(),
+-
+-            "end_date": timezone.now() + timedelta(days=30),
+-
+-            "is_active": True
+-        }
++    # IMPORTANT: this does NOT activate the plan. It only records that the
++    # restaurant has requested it. A staff member must verify payment and
++    # activate it from the admin panel (RestaurantSubscription ->
++    # "Mark payment verified & activate" action) before it takes effect.
++    # This is deliberate: there is currently no payment-gateway integration,
++    # so instantly activating here would let anyone grant themselves a free
++    # subscription.
++    subscription, _ = RestaurantSubscription.objects.get_or_create(
++        restaurant=restaurant
+     )
++    subscription.requested_plan = plan
++    subscription.payment_status = "pending_verification"
++    subscription.save()
+ 
+     messages.success(
+         request,
+-        f"{plan.name} plan activated successfully!"
++        f"Your request for the {plan.get_name_display()} plan has been received. "
++        f"We'll activate it as soon as your payment is verified — you'll be "
++        f"notified once it's live."
+     )
+ 
+-    return redirect("qr_list")
++    return redirect("subscription_plans")
+diff --git a/apps/orders/migrations/0002_order_access_token.py b/apps/orders/migrations/0002_order_access_token.py
+new file mode 100644
+index 0000000..fbd23e8
+--- /dev/null
++++ b/apps/orders/migrations/0002_order_access_token.py
+@@ -0,0 +1,35 @@
++import uuid
++
++from django.db import migrations, models
++
++
++def backfill_access_tokens(apps, schema_editor):
++    Order = apps.get_model("orders", "Order")
++    for order in Order.objects.filter(access_token__isnull=True):
++        order.access_token = uuid.uuid4()
++        order.save(update_fields=["access_token"])
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ("orders", "0001_initial"),
++    ]
++
++    operations = [
++        # Step 1: add the column as nullable so existing rows aren't broken.
++        migrations.AddField(
++            model_name="order",
++            name="access_token",
++            field=models.UUIDField(null=True, editable=False),
++        ),
++        # Step 2: backfill a unique token for every existing order.
++        migrations.RunPython(backfill_access_tokens, migrations.RunPython.noop),
++        # Step 3: now that every row has a value, enforce NOT NULL + UNIQUE
++        # and switch on the default for all future inserts.
++        migrations.AlterField(
++            model_name="order",
++            name="access_token",
++            field=models.UUIDField(default=uuid.uuid4, editable=False, unique=True),
++        ),
++    ]
+diff --git a/apps/orders/models.py b/apps/orders/models.py
+index cdba91b..8c0c0ba 100644
+--- a/apps/orders/models.py
++++ b/apps/orders/models.py
+@@ -1,3 +1,4 @@
++import uuid
+ from django.db import models
+ from apps.restaurants.models import Restaurant
+ from apps.menus.models import MenuItem
+@@ -13,6 +14,12 @@ class Order(models.Model):
+         ("cancelled",  "Cancelled"),
+     ]
+ 
++    # Non-guessable public identifier. The sequential `pk` is only ever used
++    # internally (kitchen/dashboard views, which are already restaurant-scoped
++    # and login-gated). The customer-facing confirmation URL uses this token
++    # instead, so order details can't be enumerated by walking integer IDs.
++    access_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
++
+     restaurant   = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="orders")
+     table_number = models.CharField(max_length=50)
+     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+diff --git a/apps/orders/urls.py b/apps/orders/urls.py
+index 36b88af..1bb5684 100644
+--- a/apps/orders/urls.py
++++ b/apps/orders/urls.py
+@@ -4,7 +4,7 @@ from . import views, waiter_views
+ urlpatterns = [
+     path("place/<slug:restaurant_slug>/<slug:qr_slug>/",
+          views.place_order,            name="place_order"),
+-    path("confirm/<int:order_id>/",
++    path("confirm/<uuid:access_token>/",
+          views.order_confirm,          name="order_confirm"),
+     path("kitchen/",
+          waiter_views.kitchen_screen,  name="kitchen_screen"),
+diff --git a/apps/orders/views.py b/apps/orders/views.py
+index e84a9ed..353db1b 100644
+--- a/apps/orders/views.py
++++ b/apps/orders/views.py
+@@ -81,9 +81,10 @@ def place_order(request, restaurant_slug, qr_slug):
+         order.calculate_total()
+         
+         return JsonResponse({
+-            "success":  True,
+-            "order_id": order.pk,
+-            "total":    float(order.total_amount),
++            "success":      True,
++            "order_id":     order.pk,
++            "access_token": str(order.access_token),
++            "total":        float(order.total_amount),
+         })
+ 
+     return render(request, "orders/place_order.html", {
+@@ -93,6 +94,6 @@ def place_order(request, restaurant_slug, qr_slug):
+     })
+ 
+ 
+-def order_confirm(request, order_id):
+-    order = get_object_or_404(Order, pk=order_id)
++def order_confirm(request, access_token):
++    order = get_object_or_404(Order, access_token=access_token)
+     return render(request, "orders/order_confirm.html", {"order": order})
+diff --git a/templates/orders/place_order.html b/templates/orders/place_order.html
+index 29c3aed..7de2232 100644
+--- a/templates/orders/place_order.html
++++ b/templates/orders/place_order.html
+@@ -742,7 +742,7 @@
+         if (!resp.ok) throw new Error('HTTP ' + resp.status);
+         const data = await resp.json();
+         if (data.success) {
+-          window.location.href = '/orders/confirm/' + data.order_id + '/';
++          window.location.href = '/orders/confirm/' + data.access_token + '/';
+         } else {
+           alert(data.error || 'Something went wrong. Please try again.');
+           btn.textContent = '✓ Place Order';
+diff --git a/templates/subscriptions/plans.html b/templates/subscriptions/plans.html
+index 96879e8..4ed86d6 100644
+--- a/templates/subscriptions/plans.html
++++ b/templates/subscriptions/plans.html
+@@ -101,20 +101,25 @@
+ 
+             </div>
+ 
+-            <form method="post">
++            <form method="post" action="{% url 'choose_plan' plan.id %}">
+                 {% csrf_token %}
+ 
+-                <input type="hidden" name="plan_id" value="{{ plan.id }}">
+-
+-                <button type="submit" class="btn btn--primary" onclick="showAdminmsg()" style="
++                <button type="submit" class="btn btn--primary" style="
+                         width:100%;
+                         justify-content:center;
+                         font-size:16px;
+                         padding:14px;
+                     ">
+-                    Choose Plan
++                    Request This Plan
+                 </button>
+ 
++                <p style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center;">
++                    Requesting a plan doesn't charge you automatically — pay via
++                    UPI/bank transfer using the details we send you, and we'll
++                    activate the plan once payment is confirmed. Questions?
++                    Call 8308707802.
++                </p>
++
+             </form>
+ 
+         </div>
+@@ -131,10 +136,4 @@
+ 
+ </div>
+ 
+-<script>
+-    function showAdminmsg() {
+-        alert("CONTACT YOUR ADMIN OR CALL 8308707802")
+-    }
+-</script>
+-
+ {% endblock %}
+\ No newline at end of file

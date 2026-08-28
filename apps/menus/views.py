@@ -3,8 +3,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import MenuCategory, MenuItem
 from .forms import MenuCategoryForm, MenuItemForm
-from datetime import timedelta
-from django.utils import timezone
 from apps.restaurants.models import Restaurant
 from .models import SubscriptionPlan, RestaurantSubscription
 
@@ -270,25 +268,25 @@ def choose_plan(request, plan_id):
         id=plan_id
     )
 
-    RestaurantSubscription.objects.update_or_create(
-
-        restaurant=restaurant,
-
-        defaults={
-
-            "plan": plan,
-
-            "start_date": timezone.now(),
-
-            "end_date": timezone.now() + timedelta(days=30),
-
-            "is_active": True
-        }
+    # IMPORTANT: this does NOT activate the plan. It only records that the
+    # restaurant has requested it. A staff member must verify payment and
+    # activate it from the admin panel (RestaurantSubscription ->
+    # "Mark payment verified & activate" action) before it takes effect.
+    # This is deliberate: there is currently no payment-gateway integration,
+    # so instantly activating here would let anyone grant themselves a free
+    # subscription.
+    subscription, _ = RestaurantSubscription.objects.get_or_create(
+        restaurant=restaurant
     )
+    subscription.requested_plan = plan
+    subscription.payment_status = "pending_verification"
+    subscription.save()
 
     messages.success(
         request,
-        f"{plan.name} plan activated successfully!"
+        f"Your request for the {plan.get_name_display()} plan has been received. "
+        f"We'll activate it as soon as your payment is verified — you'll be "
+        f"notified once it's live."
     )
 
-    return redirect("qr_list")
+    return redirect("subscription_plans")

@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from apps.restaurants.models import Restaurant
 from apps.menus.models import MenuItem
@@ -12,6 +13,12 @@ class Order(models.Model):
         ("completed",  "Completed"),
         ("cancelled",  "Cancelled"),
     ]
+
+    # Non-guessable public identifier. The sequential `pk` is only ever used
+    # internally (kitchen/dashboard views, which are already restaurant-scoped
+    # and login-gated). The customer-facing confirmation URL uses this token
+    # instead, so order details can't be enumerated by walking integer IDs.
+    access_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     restaurant   = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="orders")
     table_number = models.CharField(max_length=50)
